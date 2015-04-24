@@ -5,6 +5,7 @@ package pack_cell is
   
   function "+"(S1, S2: STATUS) return N_COUNT;
   function "+"(N: N_COUNT; S: STATUS) return N_COUNT;
+  procedure invert(state: inout STATE);
 
 end package pack_cell;
 
@@ -31,6 +32,16 @@ package body pack_cell is
     end if;
     return SUM;
   end "+";
+  
+-- invert signal procedure
+  procedure invert(state: inout STATUS)
+  begin
+    if STATUS = ALIVE then
+      STATUS <= DEAD;
+    else
+      STATUS <= ALIVE;
+    end if;
+  end invert;
 end package body pack_cell;
 
     
