@@ -1,0 +1,2 @@
+source /packages/LabSoC/Mentor/.initrc
+source /packages/LabSoC/Synopsys/.initrc
