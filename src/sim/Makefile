@@ -9,11 +9,6 @@
 # http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
 #
 
-#####################################################
-######## Don't change anything in this file #########
-#####################################################
-
-## Root directory of the project.
-ROOTDIR	= .
+ROOTDIR	= ../..
 
 include $(ROOTDIR)/Makefile.defs
