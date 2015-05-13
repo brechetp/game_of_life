@@ -14,12 +14,12 @@ architecture sim of cell_sim is
 -- much simpler but we could use different names and bind signal names to port
 -- names in the instanciation of cell.
   signal clk, stop_simulation: bit;
-  signal N, NE, E, SE, S, SW, W, NW: STATUS;
+  signal N, NE, E, SE, S, SW, W, NW: STATUS; -- neighbours
 
 begin
 
 -- this process generates a symmetrical clock with a period of 20 ns.
--- this clock will never stop.
+-- this clock will never stop unless stop_simulation is raised.
   clock_generator: process
   begin
     clk <= '0';
@@ -44,13 +44,13 @@ begin
     NW <= DEAD;
     for i in 1 to 255 loop
       if clk = '1' then
-        if (i mod 128 = 0) then
+        if (i mod 128 = 0) then -- every 128 CC, so twice
           N <= invert(N);
         end if;
-        if (i mod 64 = 0) then
+        if (i mod 64 = 0) then -- 4 times
           NE <= invert(NE);
         end if;
-        if (i mod 32 = 0) then
+        if (i mod 32 = 0) then -- ...
           E <= invert(E);
         end if;
         if (i mod 16 = 0 ) then
@@ -78,16 +78,16 @@ begin
 -- we instanciate the entity cell, architecture arc. we name the instance i_cell and
 -- specify the association between port names and actual signals.
   i_cell: entity work.cell(syn)
-  port map(clk => clk,
-  mode => '1',
-  N => N,
-  NE => NE,
-  E => E,
-  SE => SE,
-  S => S,
-  SW => SW,
-  W => W,
-  NW => NW,
-  state_out => state);  
-  
+  port map(clk        => clk,
+  mode                => '1',
+  N                   => N,
+  NE                  => NE,
+  E                   => E,
+  SE                  => SE,
+  S                   => S,
+  SW                  => SW,
+  W                   => W,
+  NW                  => NW,
+  state_out           => state);
+
 end architecture sim;
