@@ -42,27 +42,27 @@ begin
     SW <= DEAD;
     W  <= DEAD;
     NW <= DEAD;
-    for i in 1 to 255 loop
+    for i in 1 to 511 loop
       if clk = '1' then
-        if (i mod 128 = 0) then
+        if (i mod 256 = 0) then
           N <= invert(N);
         end if;
-        if (i mod 64 = 0) then
+        if (i mod 128 = 0) then
           NE <= invert(NE);
         end if;
-        if (i mod 32 = 0) then
+        if (i mod 64 = 0) then
           E <= invert(E);
         end if;
-        if (i mod 16 = 0 ) then
+        if (i mod 32 = 0 ) then
           SE <= invert(SE);
         end if;
-        if (i mod 8 = 0) then
+        if (i mod 16 = 0) then
           S <= invert(S);
         end if;
-        if (i mod 4 = 0) then
+        if (i mod 8 = 0) then
           SW <= invert (SW);
         end if;
-        if (i mod 2 = 0) then
+        if (i mod 4 = 0) then
           W <= invert(W);
         end if;
         NW <= invert(NW);
@@ -75,19 +75,19 @@ begin
 
 
 
--- we instanciate the entity cell, architecture arc. we name the instance i_cell and
--- specify the association between port names and actual signals.
+-- we instanciate the entity cell, architecture syn. we name the instance i_cell and
+-- specify the association between port names (left) and actual simulation signals (right).
   i_cell: entity work.cell(syn)
-  port map(clk => clk,
-  mode => '1',
-  N => N,
-  NE => NE,
-  E => E,
-  SE => SE,
-  S => S,
-  SW => SW,
-  W => W,
-  NW => NW,
-  state_out => state);  
-  
+  port map(clk                  => clk,
+  mode                          => '1',
+  N                             => N,
+  NE                            => NE,
+  E                             => E,
+  SE                            => SE,
+  S                             => S,
+  SW                            => SW,
+  W                             => W,
+  NW                            => NW,
+  state_out                     => state);
+
 end architecture sim;

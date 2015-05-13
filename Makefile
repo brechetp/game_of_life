@@ -8,6 +8,7 @@ SYNTOP		= cell
 ## is, bar.vhd must be compiled before foo.vhd), add a line:
 ## .foo.tag: .bar.tag
 .cell.tag: .pack_cell.tag
+.cell_sim.tag: .cell.tag
 ## If foo.vhd depends on several files bar1.vhd and bar2.vhd, add a line:
 ## .foo.tag: .bar1.tag .bar2.tag
 ##.g1_sim.tag: .g1.tag
