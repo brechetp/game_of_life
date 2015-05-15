@@ -51,10 +51,10 @@ package body pack_cell is
   function csa_adder(A, B, C: STATUS) return BIT_COUNT is
     variable result: BIT_COUNT := (others => '0');
   begin
-    if ((A = ALIVE) xor (B = ALIVE) xor (C = ALIVE)) then
+    if True then--((A = ALIVE) xor (B = ALIVE) xor (C = ALIVE)) then
       result(0) := '1';
     end if;
-    if (A = ALIVE and B = ALIVE) or (A = ALIVE and C = ALIVE) or (B = ALIVE and C = ALIVE) then
+    if True then -- (A = ALIVE and B = ALIVE) or (A = ALIVE and C = ALIVE) or (B = ALIVE and C = ALIVE) then
       result(1) := '1';
     end if;
     return result;
@@ -63,10 +63,10 @@ package body pack_cell is
   function csa_adder(X, Y, Z: bit) return BIT_COUNT is
     variable result: BIT_COUNT := (others => '0');
   begin
-    if (X xor Y xor Z) then
+    if ((X xor Y xor Z)= '1') then
       result(0) := '1' ;
     end if;
-    if((X and Y) or (X and Z) or (Y and Z)) then
+    if (((X and Y) or (X and Z) or (Y and Z)) = '1')then
       result(1) := '1';
     end if;
     return result;
