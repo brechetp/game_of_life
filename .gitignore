@@ -1,0 +1,14 @@
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+
+*.ini
+*.log
+*.qtb
+*.qtl
+*.tag
+*.wlf
+*.qdb
+*.qpg
+_*
+*.orig
+exists
