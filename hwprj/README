@@ -1,0 +1,111 @@
+Copyright (C) Telecom ParisTech
+
+This file must be used under the terms of the CeCILL.
+This source file is licensed as described in the file COPYING, which
+you should have received as part of this distribution.  The terms
+are also available at
+http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
+
+
+Content
+-------
+This directory contains a set of scripts and Makefiles to manage digital
+hardware projects. HWPrj is as less Graphical User Interfaces as possible and as
+much automation as possible. If you love GUIs and hate command line, make,
+scripts... you should probably not use this.  
+
+HWPrj supports Modelsim (Mentor Graphics) for simulation and Precision RTL
+(Mentor Graphics), Cadence RTL Compiler (Cadence) or Vivado (Xilinx) for logic
+synthesis.
+
+Installation
+------------
+1) Create a directory for your new project and clone HWPrj into it:
+
+$ mkdir myProject
+$ cd myProject
+$ git clone git@gitlab.eurecom.fr:renaud.pacalet/hwprj.git
+
+Do not forget to pull from time to time to receive the latest bug fixes and
+enhancements:
+
+$ cd myProject/hwprj
+$ git pull
+
+If your project is also under git control create a submodule, instead:
+
+$ cd myProject
+$ git submodule add git@gitlab.eurecom.fr:renaud.pacalet/hwprj.git
+
+To update your hwprj submodule:
+
+$ cd myProject
+$ git submodule update --remote hwprj
+
+2) Copy the template Makefile:
+
+$ cp hwprj/Makefile.template Makefile
+
+You can customize it if you wish, as long as you do not change the part HWPrj
+relies on, but it should not be necessary.
+
+3) Optionally, if you plan to use Modelsim with external libraries, also copy
+the template external libraries definitions:
+
+$ cp hwprj/externs.mk.template externs.mk
+
+and customize it. It contains example external libraries definitions that you
+can use as templates for your own definitions.
+
+4) Create your first module:
+
+$ make module
+Module name: foo
+Module foo created. Please define its intra- and inter-dependencies in:
+  /home/jd/myProject/hdl/foo/dependencies.txt
+and append its specific make rules to:
+  /home/jd/myProject/hdl/foo/Makefile
+
+The source code of the project is organized in modules. Modules are sets of
+source files that you want to keep together. The source files of module 'foo'
+are stored in 'myProject/hdl/foo' and they are compiled in library 'foo_lib'.
+You can have as many modules as you wish. Each module's source directory
+contains a local default 'Makefile' created by 'make module' that you can
+customize, as long as you do not change the part HWPrj relies on. It also
+contains a file named 'dependencies.txt' in which you must declare the
+dependencies of your project. Please see the comments in the default
+'dependencies.txt' file created by 'make module'. The extension of your source
+files must be '.vhd' for VHDL and '.v' for Verilog.
+
+Compilation, simulation, synthesis and other actions are performed either from
+the root directory of the project or from a module's source directory. In most
+cases the default make target is 'help'. So, in the root directory or in a
+module's source directory, typing:
+
+$ make
+
+or:
+
+$ make help
+
+prints a list of the available make targets and a brief description.
+
+Adding a new module
+-------------------
+From the VHDL root directory type:
+
+$ make module
+
+and follow the instructions.
+
+Isolating a broken module
+-------------------------
+If, for any reason, a module does not compile or synthesize any more (this
+should never happen but...), create a file named 'ignore' in its source
+directory so that it is skipped by the compilation or synthesis:
+
+$ touch myProject/hdl/foo/ignore
+
+As soon as it is repaired, just delete the 'ignore' file. If you are using a
+version management system, do not forget to commit the 'ignore' files creations
+or deletions.

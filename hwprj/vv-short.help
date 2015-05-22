@@ -1,0 +1,15 @@
+--------------------------------------------------------------------------------
+Xilinx Vivado-related targets:
+  vv-help:
+    print Xilinx Vivado-related help
+  vv-tests:
+    run the Xilinx Vivado synthesis regression tests in all modules and logs the
+    result in the vv-tests.log logfile; in each module M a local
+    hdl/M/vv-tests.log logfile is also created and failing synthesis have
+    individual hdl/M/F.vv-tests.log logfiles
+  vv-ultraclean:
+    delete all synthesis results subdirectories but keep regression test
+    logfiles
+  vv-logclean:
+    delete all regression test logfiles
+--------------------------------------------------------------------------------
