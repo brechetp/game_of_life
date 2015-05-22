@@ -1,0 +1,13 @@
+Copyright (C) Telecom ParisTech
+
+HWPrj is a set of scripts and Makefiles that can be used to manage digital
+hardware projects. It is as less Graphical User Interfaces as possible and as
+much automation as possible. If you love GUIs and hate command line, make,
+scripts...  you should probably not use this.
+
+HWPrj is governed by the CeCILL license under French law and abiding by the
+rules of distribution of free software. You can use, modify and/ or
+redistribute the software under the terms of the CeCILL license as circulated
+by CEA, CNRS and INRIA at the following URL http://www.cecill.info/.
+
+Contact: renaud.pacalet@telecom-paristech.fr
