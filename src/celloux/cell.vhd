@@ -27,11 +27,23 @@ begin
       case state is -- we check the old state
         when DEAD =>
           if neighbour_count = 3 then -- reproduction
-            state <= ALIVE;
+            state <= NEWALIVE;
           end if;
         when ALIVE =>
           if neighbour_count /= 2 and neighbour_count /= 3 then -- death
+            state <= NEWDEAD;
+          end if;
+        when NEWDEAD =>
+          if neighbour_count = 3 then -- reproduction
+            state <= NEWALIVE;
+          else
             state <= DEAD;
+          end if;
+        when NEWALIVE =>
+          if neighbour_count /= 2 and neighbour_count /= 3 then -- death
+            state <= NEWDEAD;
+          else
+            state <= ALIVE;
           end if;
       end case ;
     end if;
