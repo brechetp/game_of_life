@@ -38,7 +38,7 @@ package body pack_cell is
     return SUM;
   end "+";
 
-  function color2state(cell, color: std_ulogic_vector) return STATUS is
+  function color2state(cell, color: std_ulogic_vector) return STATUS is -- color is the color model (?) global varaible
     variable state: STATUS := DEAD;
   begin
     for i in 0 to 3 loop
