@@ -6,6 +6,8 @@ package pack_cell is
   type STATUS is (NEWDEAD, DEAD, NEWALIVE, ALIVE);
   subtype N_COUNT is INTEGER range 0 to 8;
   subtype BIT_COUNT is BIT_VECTOR (1 downto 0);
+  constant NUMBER_CELL : integer := 80;
+  type cell_array is array(0 to NUMBER_CELL-1) of STATUS;
   
   function "+"(S1, S2: STATUS) return N_COUNT;
   function "+"(N: N_COUNT; S: STATUS) return N_COUNT;
