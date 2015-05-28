@@ -49,7 +49,6 @@ begin
             state <= ALIVE;
           end if;
       end case ;
-      done <= '1'; -- the computation is done
     end if;
   end process;
 

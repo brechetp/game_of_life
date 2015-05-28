@@ -47,20 +47,22 @@ package body pack_cell is
   end "+";
 
   function color2state(colour: COLOR) return CELL_STATE is -- returns the cell state matching the color colour
-    variable index: natural := to_integer(unsigned(colour(2,7))); -- the index of the cell we are looking for, we just need to look at the bits #2 & #7 to find it
+    variable index: natural; -- the index of the cell we are looking for, we just need to look at the bits #2 & #7 to find it
+    variable b_index: std_ulogic_vector(1 downto 0) := colour(2) & colour(7);
   begin
+    index := to_integer(unsigned(b_index));
     return CELL_STATE'VAL(index); -- we look up the correct index in the state tab
   end color2state;
 
   function state2color(state: CELL_STATE) return COLOR is -- returns the color matching the cell state of cell
   begin
-    return colours(CELL_STATE'POS(state));
+    return COLORS(CELL_STATE'POS(state)); -- COLORS is the global array defined in this package
   end state2color;
 
 -- invert signal function
   function invert(state: CELL_STATE) return CELL_STATE is
   begin
-    return CELL_STATE'VAL(3-CELL_STATE'POS(state)) -- ALIVE -> DEAAD, NEW_X -> NEW_Y
+    return CELL_STATE'VAL(3-CELL_STATE'POS(state)); -- ALIVE -> DEAAD, NEW_X -> NEW_Y
   end invert;
 
 end package body pack_cell;

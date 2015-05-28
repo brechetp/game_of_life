@@ -1,8 +1,8 @@
 -- main package for the game of life
 --
 
-library CELLOUX;
-use CELLOUX.PACK_CELL;
+library CELLOUX_LIB;
+use CELLOUX_LIB.PACK_CELL;
 
 package main_pkg is
 
