@@ -6,8 +6,8 @@ entity cell is
   port
   (
     clk, mode: in bit; -- mode will serve initialization purposes
-    N, NE, E, SE, S, SW, W, NW: in CELL; -- the cell neighbors
-    state_out: out CELL
+    N, NE, E, SE, S, SW, W, NW: in CELL_STATE; -- the cell neighbors
+    state_out: out CELL_STATE
   );
 end entity cell;
   
@@ -15,7 +15,7 @@ end entity cell;
 
 architecture syn of cell is
 
-  signal state: CELL;
+  signal state: CELL_STATE;
 
 begin
 
