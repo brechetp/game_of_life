@@ -1,0 +1,17 @@
+--------------------------------------------------------------------------------
+Cadence RC-related targets:
+  rc-help:
+    print Cadence RC-related help
+  rc-lib-help:
+    print target libraries help
+  rc-tests:
+    run the Cadence RC synthesis regression tests in all modules and logs the
+    result in the rc-tests.log logfile; in each module M a local
+    hdl/M/rc-tests.log logfile is also created and failing synthesis have
+    individual hdl/M/F.rc-tests.log logfiles
+  rc-ultraclean:
+    delete all synthesis results subdirectories but keep regression test
+    logfiles
+  rc-logclean:
+    delete all regression test logfiles
+--------------------------------------------------------------------------------

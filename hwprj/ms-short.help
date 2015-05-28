@@ -1,0 +1,28 @@
+--------------------------------------------------------------------------------
+Modelsim-related targets:
+  ms-help:
+    print Modelsim-related help
+  ms-all:
+    compile all the modules
+  ms-tests:
+    runs the Modelsim compilation regression tests: test in a ultracleaned
+    environment that all design units of all modules compile without error and
+    logs the results in the ms-tests.log logfile; in each module M a local
+    hdl/M/ms-tests.log logfile is also created and failing compilations have
+    individual hdl/M/F.ms-tests.log logfiles
+  ms-sim-tests:
+    run the Modelsim simulation regression tests in all modules and logs the
+    results in the ms-sim-tests.log file; in each module M a local
+    hdl/M/ms-sim-tests.log logfile is also created and failing failing
+    simulations have individual hdl/M/F.ms-sim-tests.log logfiles
+  M_lib:
+    compile module M
+  M_lib.F:
+    compile file hdl/M/F.vhd in library M_lib
+  ms-clean:
+    clean the whole project
+  ms-ultraclean:
+    clean more but keep regression test logfiles
+  ms-logclean:
+    delete all regression test logfiles
+--------------------------------------------------------------------------------
