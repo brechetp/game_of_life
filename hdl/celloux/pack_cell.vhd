@@ -4,7 +4,7 @@ use ieee.std_logic_1164.all;
 package pack_cell is
 
   type CELL_STATE is (DEAD, NEWDEAD, NEWALIVE, ALIVE); -- the cell status
-  type COLOR is (B"00000000", B"11100000", B"00011100", B"11111111"); -- the cell colors, in the same order as the cells. BLACK, RED, GREEN, WHITE
+  type COLOR is ('00000000', '1110000', '00011100', '1111111'); -- the cell colors, in the same order as the cells. BLACK, RED, GREEN, WHITE
   type COLOR_VECTOR is array(natural range <>) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
   subtype BIT_COUNT is BIT_VECTOR (1 downto 0); -- the number of neighbors in binary
