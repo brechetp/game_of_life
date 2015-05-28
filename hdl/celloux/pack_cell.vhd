@@ -1,15 +1,16 @@
 library ieee;
+use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
 
 package pack_cell is
 
   type CELL_STATE is (DEAD, NEWDEAD, NEWALIVE, ALIVE); -- the cell status
   subtype COLOR is STD_ULOGIC_VECTOR(7 downto 0); -- the cell colors, in the same order as the cells. BLACK, RED, GREEN, WHITE
-  type COLOR_VECTOR is array(natural range <>) of COLOR;
+  type COLOR_VECTOR is array(natural range 0 to 3) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
   subtype BIT_COUNT is BIT_VECTOR (1 downto 0); -- the number of neighbors in binary
 
-  constant COLORS: array(0 to 3) of COLOR := (b"00000000", b"11100000", b"00011100", b"11111111"); -- black, red, green, white rrrgggbb 8-bit colors
+  constant COLORS: COLOR_VECTOR := (b"00000000", b"11100000", b"00011100", b"11111111"); -- black, red, green, white rrrgggbb 8-bit colors
   
 
   
@@ -51,9 +52,9 @@ package body pack_cell is
     return CELL_STATE'VAL(index); -- we look up the correct index in the state tab
   end color2state;
 
-  function state2color(cell: CELL_STATE) return COLOR is -- returns the color matching the cell state of cell
+  function state2color(state: CELL_STATE) return COLOR is -- returns the color matching the cell state of cell
   begin
-    return colours(CELL_STATE'POS(cell));
+    return colours(CELL_STATE'POS(state));
   end state2color;
 
 -- invert signal function
