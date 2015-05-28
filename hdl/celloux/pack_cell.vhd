@@ -4,10 +4,13 @@ use ieee.std_logic_1164.all;
 package pack_cell is
 
   type CELL_STATE is (DEAD, NEWDEAD, NEWALIVE, ALIVE); -- the cell status
-  type COLOR is ('00000000', '1110000', '00011100', '1111111'); -- the cell colors, in the same order as the cells. BLACK, RED, GREEN, WHITE
+  subtype COLOR is STD_ULOGIC_VECTOR(7 downto 0); -- the cell colors, in the same order as the cells. BLACK, RED, GREEN, WHITE
   type COLOR_VECTOR is array(natural range <>) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
   subtype BIT_COUNT is BIT_VECTOR (1 downto 0); -- the number of neighbors in binary
+
+  constant COLORS: array(0 to 3) of COLOR := (b"00000000", b"11100000", b"00011100", b"11111111"); -- black, red, green, white rrrgggbb 8-bit colors
+  
 
   
   function "+"(S1, S2: CELL_STATE) return N_COUNT;
@@ -43,13 +46,14 @@ package body pack_cell is
   end "+";
 
   function color2state(colour: COLOR) return CELL_STATE is -- returns the cell state matching the color colour
+    variable index: natural := to_integer(unsigned(colour(2,7))); -- the index of the cell we are looking for, we just need to look at the bits #2 & #7 to find it
   begin
-    return CELL_STATE'VAL(COLOR'POS(colour)); -- we look up the correct index in the state tab
+    return CELL_STATE'VAL(index); -- we look up the correct index in the state tab
   end color2state;
 
   function state2color(cell: CELL_STATE) return COLOR is -- returns the color matching the cell state of cell
   begin
-    return COLOR'VAL(CELL_STATE'POS(cell));
+    return colours(CELL_STATE'POS(cell));
   end state2color;
 
 -- invert signal function
