@@ -1,9 +1,10 @@
 -- simulation environment for ac.vhd, the cellular automaton
 --
-library main_lib;
-use ca_lib.main_pkg.all
+library ieee;
+use ieee.std_logic_1164.all;
+use work.main_pkg.all
 
-entity ca_sim sim
+entity ca_sim is
   port(cells : out array (0 to BUFFER_SIZE-1) of std_ulogic);
 end entity ca_sim;
 

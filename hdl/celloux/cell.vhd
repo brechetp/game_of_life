@@ -1,11 +1,14 @@
 -- file cell.vhdl
+library ieee;
+use ieee.std_logic_1164.all;
 use WORK.pack_cell.all;
 
 
 entity cell is
   port
   (
-    clk, mode: in bit; -- mode will serve initialization purposes
+    clk: in std_ulogic;
+    mode: in bit; -- mode will serve initialization purposes
     N, NE, E, SE, S, SW, W, NW: in CELL_STATE; -- the cell neighbors
     state_out: out CELL_STATE
   );
