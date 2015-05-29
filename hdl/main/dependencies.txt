@@ -22,7 +22,11 @@
 #rnd: \
 #	global_lib.numeric_std \
 #	random_pkg
-  .NOSYN: cell_sim
-cell_sim: \
+
+main_pkg: \ 
+        celloux_lib.pack_cell \
+        celloux_lib.cell
+ca: \
+        main_pkg \
         celloux_lib.pack_cell \
         celloux_lib.cell

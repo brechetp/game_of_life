@@ -1,7 +1,8 @@
 -- file cell.vhdl
 library ieee;
+library celloux_lib;
 use ieee.std_logic_1164.all;
-use WORK.pack_cell.all;
+use celloux_lib.pack_cell.all;
 
 
 entity cell is

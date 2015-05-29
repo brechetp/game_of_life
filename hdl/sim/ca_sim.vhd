@@ -2,68 +2,77 @@
 --
 library ieee;
 use ieee.std_logic_1164.all;
-use work.main_pkg.all
+library celloux_lib;
+use celloux_lib.pack_cell.all;
+library main_lib;
+use main_lib.main_pkg.all;
 
 entity ca_sim is
-  port(cells : out array (0 to BUFFER_SIZE-1) of std_ulogic);
+  port(cells : out CELL_VECTOR(0 to N_CELL-1);
+      RR, RW: out std_ulogic;
+      new_data: inout std_ulogic);
 end entity ca_sim;
 
 architecture sim of ca_sim is
   
-  signal clk, stop_sim: bit;
-  signal RR, RW, DR, DW: std_ulogic; -- Ready/Done Reading/Writing
-  signal color_register: std_ulogic_vector(0 to BUFFER_SIZE-1);
+  signal clk: std_ulogic;
+  signal stop_sim: std_ulogic :='0';
+  signal DR, DW: std_ulogic; -- Ready/Done Reading/Writing
+  signal in_register: CELL_VECTOR(0 to N_CELL-1);
 
-clock_generator: process
+begin
+  
+  clock_generator: process
   begin
     clk <= '0';
     wait for 10 ns;
     clk <= '1';
     wait for 10 ns;
-    if stop_simulation = '1' then
+    if stop_sim = '1' then
       wait;
     end if;
   end process clock_generator;
 
 
-  color_generator: process
+  cell_generator: process
   begin
-    color_register <= (others => '0');
-    RR <= '0';
-    RW <= '1';
+    in_register <= (others => DEAD);
+    DR <= '1';
+    DW <= '1';
     for i in 0 to 200 loop
-      if rising_edge(clk) then
-        for j in 0 to N_COLORS-1 loop
-          color_register(j*8 to (j+1)*8-1) <= COLORS'VAL((j+i)+(i*j) mod 4);
+      if clk = '1' then
+        for j in 0 to N_CELL-1 loop
+          in_register(j) <= CELL_STATE'VAL((i+j + i*j) mod 4);
         end loop;
-        if (i mod 2 = 0) then
-          RR <= not RR;
-        end if;
-        if (i mod 4 = 0) then
-          RW <= not RW;
-
+        --if (i mod 2 = 0) then
+        --  DR <= not DR;
+        --end if;
+        --if (i mod 4 = 0) then
+        --  DW <= not DW;
+        --end if;
       end if;
+      wait on clk;
     end loop;
     report "end of simulation";
     stop_sim <= '1';
-  end process color_generator;
+  end process cell_generator;
 
 
   -- we instanciate the entity ca, arc.
   --
-  i_ca: entity main_lib.ca(arc)
-  port map
-  (
-    clk => clk,
-    WIDTH => 1280,
-    HEIGHT => 840,
-    READY_READING => RR,
-    READY_WRITING => RW,
-    DONE_READING => DR,
-    DONE_WRITING => DW,
-    in_register => color_register,
-    out_register => cells
-  );
+ i_ca: entity main_lib.ca(arc)
+ port map
+ (
+   clk => clk,
+   arstn => '1',
+   READY_READING => RR, -- in_register has been read by ca
+   READY_WRITING => RW, -- out_register has been written by ca
+   DONE_READING => DR,
+   DONE_WRITING => DW,
+   in_register => in_register,
+   out_register => cells,
+   new_data => new_data
+ );
 
 end architecture sim;
 
