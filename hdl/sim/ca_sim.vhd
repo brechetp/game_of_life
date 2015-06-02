@@ -9,8 +9,7 @@ use main_lib.main_pkg.all;
 
 entity ca_sim is
   port(cells : out CELL_VECTOR(0 to N_CELL-1);
-      RR, RW: out std_ulogic;
-      new_data: inout std_ulogic);
+      RR, RW : out std_ulogic);
 end entity ca_sim;
 
 architecture sim of ca_sim is
@@ -70,8 +69,7 @@ begin
    DONE_READING => DR,
    DONE_WRITING => DW,
    in_register => in_register,
-   out_register => cells,
-   new_data => new_data
+   out_register => cells
  );
 
 end architecture sim;

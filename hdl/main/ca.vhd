@@ -30,9 +30,8 @@ entity ca is
                                                                 -- we only need this one as our window is gliding
 
     -- n+1 state of the world to be written in memory
-    out_register:     out CELL_VECTOR; -- the output colors 
-    new_data: inout std_ulogic
-                                                                -- this is the north register
+    out_register:     out CELL_VECTOR -- the output colors 
+                                      -- this is the north register
   );
 end entity ca;
 
@@ -40,6 +39,7 @@ architecture arc of ca is
 
   signal cells: window; -- the cells translated from the colors, 3 x N_CELL
   signal new_cells: CELL_VECTOR(0 to N_CELL-1);
+  signal new_data: std_ulogic := '0';
 
 begin
   
