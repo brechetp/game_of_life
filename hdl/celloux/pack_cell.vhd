@@ -10,6 +10,8 @@ package pack_cell is
   type COLOR_VECTOR is array(natural range <>) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
   subtype BIT_COUNT is BIT_VECTOR (1 downto 0); -- the number of neighbors in binary
+
+  constant COLORS: COLOR_VECTOR(0 to 3) := (b"00000000", b"11100000", b"00011100", b"11111111");
   
   function "+"(S1, S2: CELL_STATE) return N_COUNT;
   function "+"(N: N_COUNT; S: CELL_STATE) return N_COUNT;
