@@ -1,11 +1,14 @@
 -- file cell_sim.vhd
+--
+library ieee;
+use ieee.std_logic_1164.all;
 library celloux_lib;
 use celloux_lib.pack_cell.all;
 
 -- the entity of a simulation environment usually has no input output ports.
 -- file cell_sim_arc.vhd
 entity cell_sim is
-  port(state: out STATUS);
+  port(state: out CELL_STATE);
 end entity cell_sim;
 
 architecture sim of cell_sim is
@@ -14,8 +17,8 @@ architecture sim of cell_sim is
 -- signals are the same as the name of the ports of the entity cell because it is
 -- much simpler but we could use different names and bind signal names to port
 -- names in the instanciation of cell.
-  signal clk, stop_simulation: bit;
-  signal N, NE, E, SE, S, SW, W, NW: STATUS;
+  signal clk, stop_simulation: std_ulogic;
+  signal N, NE, E, SE, S, SW, W, NW: CELL_STATE;
 
 begin
 
@@ -79,16 +82,19 @@ begin
 -- we instanciate the entity cell, architecture syn. we name the instance i_cell and
 -- specify the association between port names (left) and actual simulation signals (right).
   i_cell: entity celloux_lib.cell(syn)
-  port map(clk                  => clk,
-  mode                          => '1',
-  N                             => N,
-  NE                            => NE,
-  E                             => E,
-  SE                            => SE,
-  S                             => S,
-  SW                            => SW,
-  W                             => W,
-  NW                            => NW,
-  state_out                     => state);
+  port map
+  (
+    clk       => clk,
+    mode      => '1',
+    N         => N,
+    NE        => NE,
+    E         => E,
+    SE        => SE,
+    S         => S,
+    SW        => SW,
+    W         => W,
+    NW        => NW,
+    state_out => state
+  );
 
 end architecture sim;

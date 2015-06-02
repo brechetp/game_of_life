@@ -11,4 +11,4 @@
 
 ROOTDIR	= ../..
 
-include $(ROOTDIR)/Makefile.defs
+include $(ROOTDIR)/Makefile

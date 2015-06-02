@@ -1,18 +1,25 @@
 -- file cell.vhdl
-use WORK.pack_cell.all;
+library ieee;
+library celloux_lib;
+use ieee.std_logic_1164.all;
+use celloux_lib.pack_cell.all;
 
 
 entity cell is
-  port(clk, mode: bit; N, NE, E, SE, S, SW, W, NW: in STATUS; --mode is for init purpose
-       state_out: out STATUS);
+  port
+  (
+    clk: in std_ulogic;
+    mode: in bit; -- mode will serve initialization purposes
+    N, NE, E, SE, S, SW, W, NW: in CELL_STATE; -- the cell neighbors
+    state_out: out CELL_STATE
+  );
 end entity cell;
   
 
 
 architecture syn of cell is
 
-  signal state: STATUS;
-
+  signal state: CELL_STATE;
 
 begin
 
@@ -22,7 +29,7 @@ begin
   process(clk)
     variable neighbour_count: N_COUNT; 
   begin
-    if clk = '1' and clk'event then -- on rising edge
+    if clk = '1' and clk'event then -- on rising edge, we assume neighbors are ready
       neighbour_count := N + NE + E + SE + S + SW + W + NW; -- we redefined the add operation
       case state is -- we check the old state
         when DEAD =>
