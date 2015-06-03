@@ -27,24 +27,24 @@ begin
   state_out <= state; -- we copy our working state to output
 
   process(clk)
-    variable neighbour_count: N_COUNT; -- gives the count of neighbours
+    variable neighbour_count: BIT_COUNT; -- gives the count of neighbours
   begin
     if clk = '1' and clk'event then -- on rising edge, we assume neighbors are ready
       if rstn = '0' then -- the reset is set
         state <= DEAD;
       else
-        neighbour_count := N + NE + E + SE + S + SW + W + NW; -- we redefined the add operation
+        neighbour_count := right_count(N, NE, E, SE, S, SW, W, NW); -- we redefined the add operation
         case state is -- we check the old state
           when DEAD =>
-            if neighbour_count = 3 then -- reproduction
+            if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- reproduction
               state <= NEWALIVE;
             end if;
           when ALIVE =>
-            if neighbour_count /= 2 and neighbour_count /= 3 then -- death
+            if neighbour_count(0) = '0' and neighbour_count(1) = '0' then -- death
               state <= NEWDEAD;
             end if;
           when NEWDEAD =>
-            if neighbour_count = 3 then -- reproduction
+            if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- reproduction
               state <= NEWALIVE;
             else
               state <= DEAD;
