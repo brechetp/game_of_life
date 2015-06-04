@@ -23,7 +23,7 @@ package pack_cell is
   function state2bit(s: cell_state) return std_ulogic; -- gives a 1 if alive/new_alive, else 0
   function csa_adder(s1, s2, s3: cell_state) return BIT_COUNT; -- returns a two bit value from states
   function csa_adder(x, y, z: std_ulogic) return BIT_COUNT; -- returns a two bit value from bits
-  function right_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT;
+  function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT;
 
 end package pack_cell;
 
@@ -89,7 +89,7 @@ package body pack_cell is
     return csa_adder(state2bit(s1), state2bit(s2), state2bit(s3)); -- translates state to bit
   end csa_adder;
 
-  function right_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT is
+  function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT is
     variable alpha_a, beta_b, gamma_c, res : BIT_COUNT; -- the first csa outputs
   begin
     alpha_a := csa_adder(s1, s2, s3);
@@ -97,7 +97,7 @@ package body pack_cell is
     gamma_c := csa_adder(s7, s8, DEAD);
     res := ((((alpha_a(0) and beta_b(0)) or (alpha_a(0) and gamma_c(0)) or (beta_b(0) and gamma_c(0))) xor (alpha_a(1) xor beta_b(1) xor gamma_c(1))) & (alpha_a(0) xor beta_b(0) xor gamma_c(0))); -- te sum is a+b+c + 2*(alpha+beta+gamma) so we check if we have the 2 bit set
     return res;
-  end right_count;
+  end three_count;
 
 
 

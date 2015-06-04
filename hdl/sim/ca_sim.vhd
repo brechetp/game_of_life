@@ -2,6 +2,7 @@
 --
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 library celloux_lib;
 use celloux_lib.pack_cell.all;
 library main_lib;
@@ -46,7 +47,7 @@ begin
 
 
   cell_generator: process
-    variable rand: integer range 0 to 255 := 35;
+    variable rand: integer range 0 to 255;
   begin
     in_register <= (others => DEAD);
     DR <= '1';

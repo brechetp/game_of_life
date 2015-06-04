@@ -33,24 +33,24 @@ begin
       if rstn = '0' then -- the reset is set
         state <= DEAD;
       else
-        neighbour_count := right_count(N, NE, E, SE, S, SW, W, NW); -- we redefined the add operation
+        neighbour_count := three_count(N, NE, E, SE, S, SW, W, NW); -- we redefined the add operation
         case state is -- we check the old state
           when DEAD =>
             if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- reproduction
               state <= NEWALIVE;
             end if;
           when ALIVE =>
-            if neighbour_count(0) = '0' and neighbour_count(1) = '0' then -- death
+            if neighbour_count(1) = '0' then -- count /= 2,3 -> death
               state <= NEWDEAD;
             end if;
           when NEWDEAD =>
-            if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- reproduction
+            if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- count =3 -> reproduction
               state <= NEWALIVE;
             else
               state <= DEAD;
             end if;
           when NEWALIVE =>
-            if neighbour_count /= 2 and neighbour_count /= 3 then -- death
+            if neighbour_count(1) = '0' then --count /= 2,3  death
               state <= NEWDEAD;
             else
               state <= ALIVE;
