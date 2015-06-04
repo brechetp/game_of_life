@@ -16,3 +16,4 @@ exists
 *.inc
 *.defs
 .sw[o|p]
+*.vstf
