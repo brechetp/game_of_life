@@ -31,21 +31,25 @@ entity axi_register_master is
     -- AXI lite slave port
     m_axi_m2s:  out axi_gp_m2s;
     m_axi_s2m:  in  axi_gp_s2m;
-    -- Control signals 
-    waddress:   in  std_ulogic_vector(31 downto 0); --	Address from which to start writing
-    raddress:	in  std_ulogic_vector(31 downto 0); --	Address from which to start reading
-    wsize:	in  std_ulogic_vector(7 downto 0);  --	size of writting burst
-    rsize:	in  std_ulogic_vector(7 downto 0);  --	size of reading burst
-    -- GPIO
-    wc_vector:	    in  cell_vector;		    --	cell array to be written in memory
-    write_rq:	    in  std_ulogic;                 --	Input data is valid - request new write
-    read_rq :	    in  std_ulogic:		    --  request new read
-    done_writing:   out std_ulogic;                 --	Write succesfull, ready for another
-    done_reading:   out std_ulogic;		    --	Read finished
-    rc_vector:	    out cell_vector		    --	cell array to be read from
-    w_offset:	    in	integer range 0 to 79;	    --	offset from which to write in rc_vector
+    -- Read control signals 
+    raddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start reading
+    rsize:	    in  integer range 0 to 9;		--  size of reading burst
+    r_strobe:	    in  std_ulogic_vector(7 downto 0);  --  Which part of the first 64 bit to read into rc_vector
+    read_rq :	    in  std_ulogic:			--  request new read
+    -- Read response signals
+    done_reading:   out std_ulogic; --  Read finished
+    rc_vector:	    out cell_vector;--  cell array to be read from
+    -- Write control signals
+    waddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start writing
+    wc_vector:	    in  cell_vector;			--  cell array to be written in memory
+    wsize:	    in  integer range 0 to 9;		--  size of writting burst
+    w_strobe:	    in	std_ulogic_vector(7 downto 0);	--  offset to the first non valid cell in rc_vector
+    write_rq:	    in  std_ulogic;			--  Input data is valid - request new write
+    w_offset:	    in	integer range 0 to 79;		--  offset from which to write in rc_vector
+    -- Write response signals
+    done_writing:   out std_ulogic  --  Write succesfull, ready for another
   );
-end entity axi_register;
+end entity axi_register_master;
 
 architecture rtl of axi_register_master is
     shared variable done_writing_tmp: std_ulogic;
