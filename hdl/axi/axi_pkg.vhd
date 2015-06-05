@@ -34,6 +34,11 @@ package axi_pkg is
   constant axi_gp_m: positive := 4;  -- strb bit width
   constant axi_gp_d: positive := 8 * axi_gp_m; -- data bit width
 
+  -- AXI_HP{0:3} (when configured in 64 bits) ports (PL master to PS slave)
+  constant axi_hp_i: positive := 6;  -- id  bit width
+  constant axi_hp_m: positive := 8;  -- strb bit width
+  constant axi_hp_d: positive := 8 * axi_hp_m; -- data bit width
+
   -- S_AXI_ACP ports (PL master to PS slave)
   constant axi_acp_i: positive := 3;  -- id  bit width
   constant axi_acp_u: positive := 5;  -- user bit width
@@ -141,6 +146,61 @@ package axi_pkg is
     -- Write data channel
     wready:  std_ulogic;
     -- Write response channel
+    bvalid:  std_ulogic;
+    bresp:   std_ulogic_vector(axi_r - 1 downto 0);
+  end record;
+
+  -- AXI_HP ports
+  type axi_hp_m2s is record
+    -- Read address channel
+    arid:    std_ulogic_vector(axi_hp_i - 1 downto 0);
+    araddr:  std_ulogic_vector(axi_a - 1 downto 0);
+    arlen:   std_ulogic_vector(axi_l - 1 downto 0);
+    arsize:  std_ulogic_vector(axi_s - 1 downto 0);
+    arburst: std_ulogic_vector(axi_b - 1 downto 0);
+    arlock:  std_ulogic_vector(axi_o - 1 downto 0);
+    arcache: std_ulogic_vector(axi_c - 1 downto 0);
+    arprot:  std_ulogic_vector(axi_p - 1 downto 0);
+    arqos:   std_ulogic_vector(axi_q - 1 downto 0);
+    arvalid: std_ulogic;
+    -- Read data channel
+    rready:  std_ulogic;
+    -- Write address channel
+    awid:    std_ulogic_vector(axi_hp_i - 1 downto 0);
+    awaddr:  std_ulogic_vector(axi_a - 1 downto 0);
+    awlen:   std_ulogic_vector(axi_l - 1 downto 0);
+    awsize:  std_ulogic_vector(axi_s - 1 downto 0);
+    awburst: std_ulogic_vector(axi_b - 1 downto 0);
+    awlock:  std_ulogic_vector(axi_o - 1 downto 0);
+    awcache: std_ulogic_vector(axi_c - 1 downto 0);
+    awprot:  std_ulogic_vector(axi_p - 1 downto 0);
+    awqos:   std_ulogic_vector(axi_q - 1 downto 0);
+    awvalid: std_ulogic;
+    -- Write data channel
+    wid:     std_ulogic_vector(axi_hp_i - 1 downto 0);
+    wdata:   std_ulogic_vector(axi_hp_d - 1 downto 0);
+    wstrb:   std_ulogic_vector(axi_hp_m - 1 downto 0);
+    wlast:   std_ulogic;
+    wvalid:  std_ulogic;
+    -- Write response channel
+    bready:  std_ulogic;
+  end record;
+
+  type axi_hp_s2m is record
+    -- Read address channel
+    arready: std_ulogic;
+    -- Read data channel
+    rid:     std_ulogic_vector(axi_hp_i - 1 downto 0);
+    rdata:   std_ulogic_vector(axi_hp_d - 1 downto 0);
+    rresp:   std_ulogic_vector(axi_r - 1 downto 0);
+    rlast:   std_ulogic;
+    rvalid:  std_ulogic;
+    -- Write address channel
+    awready: std_ulogic;
+    -- Write data channel
+    wready:  std_ulogic;
+    -- Write response channel
+    bid:     std_ulogic_vector(axi_hp_i - 1 downto 0);
     bvalid:  std_ulogic;
     bresp:   std_ulogic_vector(axi_r - 1 downto 0);
   end record;
