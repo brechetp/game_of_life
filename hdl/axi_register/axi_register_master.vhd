@@ -61,8 +61,8 @@ begin
     -- if gpi_valid is set to 1 then initialize variable then we set do_write_rq, if gpi_nr is set to 1 then we set do_reqd_rq
     -- do_write_rq:	if awready is 1 then assert awvalid (to 1), awaddr (to address), awlen (to the burst size = 10),awsize (011b = 8 bytes (64-bit wide burst)), awburst (type of burst, only 01b = INCR ) for one clock yhen go back to idle
     -- do_read_rq:	if arready is 1 then assert arvalid (to 1), araddr (to address), arlen (to the burst size = 10),arsize (011b = 8 bytes (64-bit wide burst)), arburst (type of burst, only 01b = INCR ) for one clock yhen go back to idle
-    variable do_write_rq:   std_ulogic;
-    variable do_read_rq:    std_ulogic;
+    signal do_write_rq:   std_ulogic;
+    signal do_read_rq:    std_ulogic;
   begin
     if rising_edge(aclk) then
       if aresetn = '0' then
@@ -72,10 +72,10 @@ begin
 	m_axi_m2s.arvalid   <=	'0';
       else
 	if write_rq = '1' then
-	  do_write_rq	    :=	'1';
+	  do_write_rq	    <=	'1';
 	  done_writing_tmp  :=	'0';
 	if read_rq = '1' then
-	  do_read_rq	    :=	'1';
+	  do_read_rq	    <=	'1';
 	  done_reading_tmp  :=	'0';
 	end if;
 	if do_write_rq = '1' then
@@ -84,7 +84,7 @@ begin
 	  m_axi_m2s.awlen	<=  10;
 	  m_axi_m2s.awsize	<=  wsize;
 	  m_axi_m2s.awburst	<=  axi_burst_incr;
-	  if m_axi_s2m.awready <= '1' then
+	  if (m_axi_s2m.awready <= '1') and (m_axi_m2s.awvalid = '1') then
 	    do_write_rq		:=  '0';
 	    m_axi_m2s.awvalid	<=  '0';
 	  end if;
@@ -95,7 +95,7 @@ begin
 	  m_axi_m2s.arlen	<=  10;
 	  m_axi_m2s.arsize	<=  rsize;
 	  m_axi_m2s.arburst	<=  axi_burst_incr;
-	  if m_axi_s2m.arready <= '1' then
+	  if (m_axi_s2m.arready = '1') and (m_axi_m2s_arvalid = '1') then
 	    do_read_rq		:=  '0';
 	    m_axi_m2s.arvalid	<=  '0';
 	  end if;
@@ -133,7 +133,7 @@ begin
       for i in 0 to 7 loop
 	if ((w_strobe(i) = '1') or (write_word_cpt != 0)) and (write_cell_number+tmp < 80) then	--  First burst call, will be written, not overflowing the cell_vector 
 	    m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(tmp));	--  Put the cell in a space that will be written
-	    tmp = tmp +1							--  Assert that we've written another cell.
+	    tmp := tmp +1							--  Assert that we've written another cell.
 	end if;
       end loop;
       if write_word_cpt = 0 then
@@ -156,7 +156,7 @@ begin
 	end if;
       end if;
       if m_axi_s2m.wready = '1' then -- We can write
-	m_axi_m2s.bready = '1';	--  We accept responce from the slave
+	m_axi_m2s.bready <= '1';	--  We accept responce from the slave
         if write_cpt = wsize then   --	We finished writting
           m_axi_m2s.wlast   <= '1'; --	We assert wlast to notify the slave
 	  done_writing_tmp  := '1'; --  Reset cpt value for next write

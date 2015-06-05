@@ -30,7 +30,7 @@ package body pack_cell is
     if (S1 = ALIVE) or (S1 = NEWALIVE) then
       SUM := SUM + 1;
     end if;
-    if S2 = ALIVE or S2 = NEWALIVE then
+    if (S2 = ALIVE) or (S2 = NEWALIVE) then
       SUM := SUM + 1;
     end if;
     return SUM;

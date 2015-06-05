@@ -19,12 +19,12 @@ architecture sim of axi_sim is
 -- names in the instanciation of cell.
   signal m_axi_s2m: cell_vector;
   signal clk, stop_simulation: bit;
-  signal aresetn:   bit := '1';
+  signal aresetn:   bit := '0';
   signal waddress:  std_ulogic_vector(31 downto 0) := "11001100110011001100110011001100";
   signal raddress:  std_ulogic_vector(31 downto 0) := "00110011001100110011001100110011";
   signal wsize:	    integer range 0 to 9 := 1;
   signal rsize:	    integer range 0 to 9 := 1;
-  signal wc_vector: cell_vector;
+  signal wc_vector: cell_vector(0 to 79);
   signal write_rq:  std_ulogic	:=  '0'
   signal read_rq:   std_ulogic  :=  '0'
   signal w_offset:  integer range 0 to 79 := 0;
@@ -34,7 +34,7 @@ begin
 -- this clock will never stop.
   clock_generator: process
   begin
-    aresetn <= 0 after 20 ns;
+    aresetn <= '1' after 20 ns;
     clk <= '0';
     wait for 10 ns;
     clk <= '1';
@@ -47,9 +47,24 @@ begin
 -- this process will drive the axi_master input so as to get him to act
   order_generator: process
   begin
-    m_axi_s2m => (others <= 0);
-    m_axi_s2m.awready <= '1';
-    m_axi_s2m.arready <= '1';
+    if aresetn = '0' then
+      m_axi_s2m => (others <= 0);
+      m_axi_s2m.awready <= '1';
+      m_axi_s2m.arready <= '1';
+    else
+      wait on aclk;
+      write_rq	<= '1';
+      wsize	<=  9;
+      w_strobe	<=  '00001111';
+      wc_vector <= (1 => ALIVE, 5 => NEWALIVE, others => DEAD);
+      for i in 0 to 50 loop
+	wait on aclk;
+	if aclk = '1' then
+	  write_rq <= 0
+	end if;
+      end loop;
+    end if;
+
     
   end process order_generator
   
@@ -69,7 +84,9 @@ begin
   done_writing	=>  done_writing,
   done_reading	=>  done_reading,
   rc_vector	=>  rc_vector,
-  w_offset	=>  w_offset
+  w_offset	=>  w_offset,
+  w_strobe	=>  w_strobe,
+  r_strobe	=>  r_strobe
   );
 
 end architecture sim;
