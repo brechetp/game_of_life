@@ -15,7 +15,7 @@ end entity ca_sim;
 
 architecture sim of ca_sim is
   
-  signal clk, rstn: std_ulogic;
+  signal clk, rstn: std_ulogic := '1';
   signal stop_sim: std_ulogic :='0';
   signal DR, DW: std_ulogic; -- Done Reading/Writing
   signal in_register: CELL_VECTOR(0 to N_CELL-1);
@@ -33,17 +33,13 @@ begin
     end if;
   end process clock_generator;
 
-  rst_generator: process
-  begin
-    rstn <= '1';
-    wait for 705 ns;
-    rstn <= '0';
-    wait for 20 ns;
-    rstn <= '1';
-    if stop_sim = '1' then
-      wait;
-    end if;
-  end process rst_generator;
+--  rst_generator: process
+--  begin
+--    rstn <= '1';
+--    if stop_sim = '1' then
+--      wait;
+--    end if;
+--  end process rst_generator;
 
 
   cell_generator: process
@@ -61,8 +57,12 @@ begin
           DR <= not DR;
         end if;
         rand := (rand*137+ 187) mod 256;
-        if (rand mod 3 = 0) then
-          DW <= not DW;
+        if i >= 120 and i <= 170 then
+          DW <= '0';
+        else
+          if (rand mod 3 = 0) then
+            DW <= not DW;
+          end if;
         end if;
       end if;
       wait on clk;
