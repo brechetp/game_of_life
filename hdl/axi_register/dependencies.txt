@@ -53,3 +53,9 @@ axi_register: \
 axi_register_wrapper: \
 	axi_lib.axi_pkg \
 	axi_register
+
+axi_register_master: \
+	global_lib.numeric_std \
+	global_lib.utils \
+	axi_lib.axi_pkg \
+    celloux_lib.pack_cell
