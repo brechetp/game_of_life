@@ -1,0 +1,15 @@
+This module is controlling the cellular automata I/O and the cell generation.
+It controlls the buffer in/out (from AXI registers)
+
+|  | 
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+
