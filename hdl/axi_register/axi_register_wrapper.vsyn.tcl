@@ -64,7 +64,7 @@ set_property -dict [list CONFIG.PCW_USE_M_AXI_GP1 {1}] $ps7
 set_property -dict [list CONFIG.PCW_M_AXI_GP0_ENABLE_STATIC_REMAP {1}] $ps7
 set_property -dict [list CONFIG.PCW_M_AXI_GP1_ENABLE_STATIC_REMAP {1}] $ps7
 set_property -dict [list CONFIG.PCW_USE_S_AXI_HP0 {1}] $ps7
-set_property -dict [list CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {32}] $ps7
+set_property -dict [list CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64}] $ps7
 
 # Interconnections
 # Primary IOs
