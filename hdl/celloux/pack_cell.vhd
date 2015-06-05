@@ -9,7 +9,7 @@ package pack_cell is
   subtype COLOR is STD_ULOGIC_VECTOR(7 downto 0); -- the cell colors, in the same order as the cells. BLACK: 00000000, RED: 11100000, GREEN: 00011100, WHITE: 11111111 
   type COLOR_VECTOR is array(natural range <>) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
-  subtype BIT_COUNT is BIT_VECTOR (1 downto 0); -- the number of neighbors in binary
+  subtype BIT_COUNT is std_ulogic_vector (1 downto 0); -- the number of neighbors in binary
 
   constant COLORS: COLOR_VECTOR(0 to 3) := (b"00000000", b"11100000", b"00011100", b"11111111");
   
@@ -18,6 +18,10 @@ package pack_cell is
   function invert(state: CELL_STATE) return CELL_STATE;
   function color2state(colour: COLOR) return CELL_STATE;
   function state2color(state: CELL_STATE) return COLOR; 
+  function state2bit(s: cell_state) return std_ulogic; -- gives a 1 if alive/new_alive, else 0
+  function csa_adder(s1, s2, s3: cell_state) return BIT_COUNT; -- returns a two bit value from states
+  function csa_adder(x, y, z: std_ulogic) return BIT_COUNT; -- returns a two bit value from bits
+  function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT;
 
 end package pack_cell;
 
@@ -63,6 +67,39 @@ package body pack_cell is
   begin
     return CELL_STATE'VAL(3-CELL_STATE'POS(state)); -- ALIVE -> DEAAD, NEW_X -> NEW_Y
   end invert;
+
+  function state2bit (s: cell_state) return std_ulogic is
+  begin
+    return to_unsigned(CELL_STATE'POS(s), 2)(1);
+  end state2bit;
+
+-- csa adder implementation for cells
+  function csa_adder(x, y, z: std_ulogic) return BIT_COUNT is
+    variable result: BIT_COUNT;
+  begin
+    result(0) := (x xor y xor z); -- basic implemetation of csa adder
+    result(1) := (x and y) or (x and z) or (y and z);
+    return result;
+  end csa_adder;
+
+  function csa_adder(s1, s2, s3: cell_state) return BIT_COUNT is
+  begin
+    return csa_adder(state2bit(s1), state2bit(s2), state2bit(s3)); -- translates state to bit
+  end csa_adder;
+
+  function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT is
+    variable alpha_a, beta_b, gamma_c, res : BIT_COUNT; -- the first csa outputs
+  begin
+    alpha_a := csa_adder(s1, s2, s3);
+    beta_b := csa_adder(s4, s5, s6);
+    gamma_c := csa_adder(s7, s8, DEAD);
+    res := ((((alpha_a(0) and beta_b(0)) or (alpha_a(0) and gamma_c(0)) or (beta_b(0) and gamma_c(0))) xor (alpha_a(1) xor beta_b(1) xor gamma_c(1))) & (alpha_a(0) xor beta_b(0) xor gamma_c(0))); -- te sum is a+b+c + 2*(alpha+beta+gamma) so we check if we have the 2 bit set
+    return res;
+  end three_count;
+
+
+
+
 
 end package body pack_cell;
 
