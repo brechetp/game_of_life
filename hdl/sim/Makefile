@@ -6,19 +6,19 @@
 GHDL=ghdl
 GHDLFLAGS= --work=sim_lib --workdir=sim_lib/ -P../celloux/celloux_lib -P../main/main_lib
 GHDLRUNFLAGS=
+FILES=$(wildcard ${TESTBENCH}.vhd)
+WAVEFORM_VIEWER=gtkwave
 
 # Default target : elaborate
-all : elab
+all : init elab run view
 
 # Elaborate target.  Almost useless
 elab : force
-	$(GHDL) -c $(GHDLFLAGS) -e cell_sim
+	$(GHDL) -c $(GHDLFLAGS) -e ${TESTBENCH}
 
-analyse : force
-	$(GHDL) -a $(GHDLFLAGS) cell_sim.vhd
 # Run target
 run : force
-	$(GHDL) -c $(GHDLFLAGS) -r cell_sim $(GHDLRUNFLAGS)
+	$(GHDL) -c $(GHDLFLAGS) -r ${TESTBENCH} $(GHDLRUNFLAGS) --wave=${TESTBENCH}.ghw
 
 # Targets to analyze libraries
 init: force
@@ -28,6 +28,9 @@ init: force
 	# /usr/local/ghdl/translate/lib//v93/ieee/../../../../libraries/ieee/numeric_std-body.v93
 	# /Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/pack_cell.vhd
 	# /Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/cell.vhd
-	$(GHDL) -a $(GHDLFLAGS) cell_sim.vhd
+	$(GHDL) -a $(GHDLFLAGS) $(FILES)
 
 force:
+
+view:
+	$(WAVEFORM_VIEWER) ${TESTBENCH}.ghw
