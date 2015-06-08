@@ -20,7 +20,7 @@ library axi_lib;
 use axi_lib.axi_pkg.all;
 
 library celloux_lib;
-use celloux_lib.pack_cell.all
+use celloux_lib.pack_cell.all;
 
 -- See the README file for a detailed description of the AXI register master
 
@@ -35,7 +35,7 @@ entity axi_register_master is
     raddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start reading
     rsize:	    in  integer range 0 to 10;		--  size of reading burst
     r_strobe:	    in  std_ulogic_vector(7 downto 0);  --  Which part of the first 64 bit to read into rc_vector
-    read_rq :	    in  std_ulogic:			--  request new read
+    read_rq :	    in  std_ulogic;			--  request new read
     r_offset:	    in	integer range 0 to 79;		--  offset from which to write in rc_vector
     -- Read response signals
     done_reading:   out std_ulogic; --  Read finished
