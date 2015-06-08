@@ -19,6 +19,7 @@ architecture sim of cell_ctrl_sim is
   signal stop_sim: std_ulogic :='0';
   signal DR, DW: std_ulogic; -- Done Reading/Writing
   signal read_cell_vector: CELL_VECTOR(0 to N_CELL-1);
+  signal rand: unsigned(31 downto 0) := b"00101101101010101011100110101110";
 
 begin
   
@@ -40,10 +41,9 @@ begin
 --      wait;
 --    end if;
 --  end process rst_generator;
-
+  
 
   cell_generator: process
-    variable rand: integer range 0 to 255;
   begin
     read_cell_vector <= (others => DEAD);
     DR <= '1';
@@ -51,16 +51,16 @@ begin
     for i in 0 to 200 loop
       if clk = '1' then
         for j in 0 to N_CELL-1 loop
-          read_cell_vector(j) <= CELL_STATE'VAL((rand*(i*j+i+j+1)) mod 4);
+          read_cell_vector(j) <= CELL_STATE'VAL(to_integer(rand(1 downto 0)));
         end loop;
-        if (rand mod 3) = 1 then
+        if rand(3 downto 2) = "00" then
           DR <= not DR;
         end if;
-        rand := (rand*137+ 187) mod 256;
+        rand <= resize(to_unsigned(1664525, 32) * rand + to_unsigned(1013904223, 32), 32);
         if i >= 120 and i <= 170 then
           DW <= '0';
         else
-          if (rand mod 3 = 0) then
+          if rand(5 downto 4) = "00" then
             DW <= not DW;
           end if;
         end if;

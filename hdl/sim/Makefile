@@ -6,7 +6,9 @@
 GHDL=ghdl
 GHDLFLAGS= --work=sim_lib --workdir=sim_lib/ -P../celloux/celloux_lib -P../main/main_lib
 GHDLRUNFLAGS=
-FILES=$(wildcard ${TESTBENCH}.vhd)
+FILES=$(wildcard *.vhd)
+ENTITIES=$(basename $FILES)
+
 WAVEFORM_VIEWER=gtkwave
 
 # Default target : elaborate
@@ -32,5 +34,5 @@ init: force
 
 force:
 
-view:
+view: run
 	$(WAVEFORM_VIEWER) ${TESTBENCH}.ghw

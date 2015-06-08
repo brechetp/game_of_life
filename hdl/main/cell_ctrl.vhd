@@ -38,7 +38,7 @@ end entity cell_ctrl;
 architecture arc of cell_ctrl is
 
   signal cells: window; -- the cells translated from the colors, 3 x N_CELL
-  signal new_cells: CELL_VECTOR(0 to N_CELL-1);
+  signal new_cells: CELL_VECTOR(0 to N_CELL-3); -- be aware of index bounds
   signal new_data: std_ulogic := '0';
 
 begin
@@ -77,7 +77,7 @@ begin
 
   GEN: for i in 1 to ( N_CELL-2 ) generate -- we create N_CELL-2 cells, mapped with each others
     CELL: entity CELLOUX_LIB.CELL(syn)
-    port map(clk, rstn, '1', cells(0,i), cells(0,i+1), cells(1,i+1), cells(2,i+1), cells(2,i), cells(2,i-1), cells(1,i-1), cells(0,i-1), new_cells(i));
+    port map(clk, rstn, '1', cells(0,i), cells(0,i+1), cells(1,i+1), cells(2,i+1), cells(2,i), cells(2,i-1), cells(1,i-1), cells(0,i-1), new_cells(i-1));
   end generate GEN;
 
   output: process(clk)

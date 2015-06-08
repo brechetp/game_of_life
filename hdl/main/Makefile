@@ -9,7 +9,7 @@ GHDLRUNFLAGS=
 VHD_FILE=$(wildcard *.vhd)
 
 # Default target : elaborate
-all : elab
+all : init elab
 
 # Elaborate target.  Almost useless
 elab : force
