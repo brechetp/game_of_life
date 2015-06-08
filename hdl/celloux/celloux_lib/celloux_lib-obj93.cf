@@ -1,7 +1,0 @@
-v 3
-file "/Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/" "pack_cell.vhd" "20150608200507.000" "20150608222443.934":
-  package pack_cell at 1( 0) + 0 on 15 body;
-  package body pack_cell at 29( 1399) + 0 on 16;
-file "/Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/" "cell.vhd" "20150608200507.000" "20150608222443.934":
-  entity cell at 2( 18) + 0 on 17;
-  architecture syn of cell at 20( 387) + 0 on 18;
