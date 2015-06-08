@@ -16,26 +16,26 @@ use celloux_lib.pack_cell.all;
 library WORK;
 use WORK.main_pkg.all;
 
-entity ca is
+entity cell_ctrl is
   port(
     clk, rstn: in std_ulogic; -- clock and synchronous reset
     -- read / write signals to start reading / writing
-    DONE_READING:  in std_ulogic; -- in_register is ready to be read
-    DONE_WRITING: in std_ulogic; -- out_register is ready to be written, it has been written into mem
-    READY_READING: out std_ulogic; -- the in_register has been read, it can now be changed by ADDR_CTR
-    READY_WRITING: out std_ulogic; -- the out_register is ready to be written in memory
+    DONE_READING:  in std_ulogic; -- read_cell_vector is ready to be read
+    DONE_WRITING: in std_ulogic; -- write_cell_vector is ready to be written, it has been written into mem
+    READY_READING: out std_ulogic; -- the read_cell_vector has been read, it can now be changed by ADDR_CTR
+    READY_WRITING: out std_ulogic; -- the write_cell_vector is ready to be written in memory
     -- n state of the world, 3 rows at a time of width BUFFER_SIZE
-    in_register:   in CELL_VECTOR; -- south cell colors
+    read_cell_vector: in CELL_VECTOR(0 to N_CELL-1); -- read cells from memory
                                                                 -- we only need this one as our window is gliding
 
     -- n+1 state of the world to be written in memory
-    out_register:     out CELL_VECTOR; -- the output colors 
+    write_cell_vector:     out CELL_VECTOR(0 to N_CELL-3) -- cells to be written to memory
                                       -- this is the north register
-    lock: out std_ulogic
+    -- lock: out std_ulogic
   );
-end entity ca;
+end entity cell_ctrl;
 
-architecture arc of ca is
+architecture arc of cell_ctrl is
 
   signal cells: window; -- the cells translated from the colors, 3 x N_CELL
   signal new_cells: CELL_VECTOR(0 to N_CELL-1);
@@ -43,7 +43,7 @@ architecture arc of ca is
 
 begin
 
-  lock <= new_data;
+  -- lock <= new_data;
   
   input: process(clk)
   begin
@@ -64,9 +64,9 @@ begin
             for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
               cells(0,i) <= cells(1,i);
               cells(1,i) <= cells(2,i);
-              cells(2,i)  <= (in_register(i));
+              cells(2,i)  <= (read_cell_vector(i));
             end loop;
-            READY_READING <= '1'; -- tells the mem the in_register has been read (it can be written), DONE_READING will be set to 0
+            READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written), DONE_READING will be set to 0
             new_data <= '1'; -- we can trust the computation of the generation g
           end if;
         end if;
@@ -84,17 +84,17 @@ begin
   begin
     if clk = '1' then
       if rstn = '0' then
-        for i in 0 to N_CELL-1 loop
-          out_register(i) <= DEAD;
+        for i in 0 to N_CELL-3 loop
+          write_cell_vector(i) <= DEAD;
         end loop;
         READY_WRITING <= '0';
       else
-        READY_WRITING <= '0'; -- we set READY_WRITING to 0 unless we cache the new cells in the out_register
+        READY_WRITING <= '0'; -- we set READY_WRITING to 0 unless we cache the new cells in the write_cell_vector
         if (DONE_WRITING = '1') and (new_data = '1') then -- checks if new data is to be output and if the old one has been written
-          for i in 1 to ( N_CELL-2 ) loop
-            out_register(i) <= new_cells(i); -- we translate the state into a color
+          for i in 0 to ( N_CELL-3 ) loop
+            write_cell_vector(i) <= new_cells(i); -- output the soon-to-be-written cells
           end loop;
-          READY_WRITING <= '1'; -- the DONE_WRITING will be set to 0
+          READY_WRITING <= '1'; -- the DONE_WRITING will be set to 0 by address controller ?
         end if;
       end if; -- end of the reset block
     end if;-- end of the syncronous block
