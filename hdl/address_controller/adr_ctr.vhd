@@ -11,11 +11,13 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std.numeric_std.all;
+use ieee.numeric_std.all;
 
-library global_lib;
-use global_lib.numeric_std.all;
-use global_lib.utils.all;
+library main_lib;
+use main_lin.main_pkg.all;
+
+library celloux_lib;
+use celloux_lib.pack_cell.all;
 
 library axi_lib;
 use axi_lib.axi_pkg.all;
@@ -119,12 +121,11 @@ begin
         first_time := '1';
       else -- no reset
         read_rq <= '0'; -- default values
-        write_rq <= '0'; -- for read/write requests
         case write_state is
           when IDLE => -- wait for the next generation computation to start
             -- initialisation state, we set variables as in reset
-            i := HEIGHT - 1; -- we first need to fetch this line by convention
-            j := 0;
+            i <= WORLD_HEIGHT - 1; -- we first need to fetch this line by convention
+            j <= 0;
             first_time := '1';
             if computation_start = '1' then -- the life awakens (new generaion computation)
               write_state <= START_LINE; -- start of a column computation
@@ -133,7 +134,7 @@ begin
           when START_LINE =>    
             -- start of a new column computation
             -- i is the line index and j the column one
-            if done_reading = '1' then -- the axi register has done reading the memory, we can ask for another shot of data
+            if done_reading = '1' and READY_READING_CELL_CTRL = '1' then -- the axi register has done reading the memory, we can ask for another shot of data
               if j = 0 then -- we are on the first column, we need to fetch the last cell (index in line = width-1)
                 write_state <= PRELOAD;
               else -- we don't need to fetch last cell in line
@@ -145,38 +146,71 @@ begin
             -- PRELOAD state
             -- whenever j is at the border of the world, we fetch
             if done_reading = '1' then -- the memory has been read
-              current_line := i;
-              if j = 0 then
-                current_column := to_integer(WIDTH)-1; -- we take into account the torus effect
-                done_reading_cell_ctrl <= '1'; -- we tell the cell_contrl the read_cell_vector is valid
-              else -- j belongs to ]width-80, width-1]
-                current_column := 0;
-              end if;
+              done_reading_cell_ctrl <= '0'; -- the next cells are not valid
+              read_line := i;
+              read_column := WORLD_WIDTH-1; -- we take into account the torus effect
               offset_first_to_load := coordinates2address(current_line, current_column);
               address_to_start_load := r_base_address + offset_first_to_load(31 downto 6) & b"000000";
               place_in_first_word := offset_first_to_load(5 downto 3); -- this is the offset in a 64bits word. There are 8 of them (the number of cells mapped to the address)
               read_strobe <= (to_integer(place_in_first_word) => '1', others => '0'); -- we set the bit of the cell to be first read to 1, acts like a mask
-              if READY_READING_CELL_CTRL = '1' then -- the memory is ready to be read
-                done_reading_cell_ctrl <= '0'; -- we warn the cell ctrl the memory has NOT been fetched yet
-                if j /= 0 then -- since we are in preload, j belongs to [width-80, width-1]
-                  read_offset <= to_integer(width) - j;
-                else
-                  read_offset <= 0;
-                end if;
-                read_request <= '1';
-                raddress <= address_to_start_load; -- since we are in the case ready_reading we can change the read_address
-                rsize <= 0; -- set the read size 
+              read_request <= '1';
+              raddress <= address_to_start_load; -- since we are in the case ready_reading we can change the read_address
+              read_offset <= 0;
+              rsize <= 1; -- set the read size 
               end if; -- end of the ready_reading block
             end if; -- end of the done_reading
 
+          when POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
+            if done_reading = '1' and ready_reading_cell_ctrl = '1' then -- if we the read is up
+              read_column := 0; -- we need the column 0 
+              read_line := i; -- of the current line
+              rsize <= 1; -- we only need 1 cell
+              offset_to_first_load := coordinates2offset(read_line, read_column);
+              address_to_start_load := r_base_address + offset_to_first_load(31 downto 6) & b"000000";
+              place_in_first_word := offset_to_first_load(5 downto 3);
+              read_strobe <= (to_integer(place_in_first_word) => '1', others => '0'); -- mask to keep the desired cell in the 8 mapped by the 64 bit word
+              read_rq <= '1'; -- we request a read
+              raddress <= address_to_start_load;
+              done_reading_cell_ctrl <= '1';
+              if i = 1 then
+                if first_time ='0' then
+                  read_state <= IDLE; -- no need to update j, we are already in the last column
+                  start_writing <= '0';
+                else
+                  start_writing <= '1';
+                  read_state <= INLINE;
+                  i <= i+1;
+                end if;
+                first_time := not first_time;
+              else
+                if i = WORLD_HEIGHT - 1 then
+                  i <= 0;
+                else
+                  i <= i+1;
+                end if;
+                read_state <= INLINE;
+              end if;
+
           when INLINE => -- we are in the middle of the world
-            if done_reading = '1' then -- the memory has been read
-              current_line := i; -- temp save of the line
-              if j > 0 then -- no left torrus effect
-                current_column := j-1; -- we need to fetch the (i, j-1) cell
-                done_reading_cell_ctrl <= '1';
-              else -- left torrus, we need to load the leftmost cell
-                current_column = j;
+            if done_reading = '1' and ready_reading_cell_ctrl = '1' then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
+              read_line := i;
+              right_torus:= '0'; -- test if we need to go to postload state or not
+              if j > 0 and j + N_CELL - 1 <= GAME_WIDTH - 1 then -- no torus effect
+                read_column := j-1; -- we need to fetch the (i, j-1) cell
+                done_reading_cell_ctrl <= '1'; -- the 
+              else
+                if j = 0 then -- left torus, the leftmost cell has already been fetched
+                  done_reading_cell_ctrl <= '1';
+                  read_state <= PRELOAD; -- will be overwritten in the case of a shift to the right (end of the column 0)
+                  read_column := j;
+                  rsize <= N_CELL-1;
+                  read_offset <= 1;
+                else -- right torus, we will need to finish the read by invoking postload
+                  right_torus := '1';
+                  done_reading_cell_ctrl <= '0';
+                  read_state <= POSTLOAD; -- mode right torus
+                  read_column := j-1;
+                  rsize <= GAME_WIDTH - j + 1; -- number of cells to fetch inline
               end if;
               offset_to_first_load := coordinates2offset(current_line, current_column);
               address_to_start_load := r_base_address + offset_first_to_load(31 downto 6) & b"000000"; -- we align on 64 bit addresses, mask
@@ -188,43 +222,29 @@ begin
                   read_strobe(k) <= '0';
                 end if;
               end loop; -- end of the read_strobe init
-              if ready_reading_cell_ctrl = '1' then -- if the memory is ready to be read
-                if j = 0 then
-                  read_offset <= 1;
-                end if;
-                done_reading_cell_ctrl <= '1';
-                read_rq <= '1'; -- request an address
-                read_address <= address_to_start_load; -- address to read
-                if place_in_first_word /= 0 then 
-                  rsize <= 10; -- rsize + 1 cells will be fetch
-                else
-                  rsize <= 9;
-                end if;
-                i := i +1;
-                if i = height then
-                  i := 0;
-                end if;
-                if i = 1 then -- the current line is i-1 = 0
-                  if first_time = '1' then -- this is the first time we are here
-                    first_time = '0'; -- set the first_time to "already seen"
-                  else -- we have already computed the new generation for this column
-                    j := j + 78; -- we shift he window to the right, we only compute 78 new cells at a time
-                    if j > width-1 then
-                      state <= IDLE;
-                    else
-                      state <= START_LINE; -- we start a new line, with the j modified
-                    end if;
-                  end if;
-                end if;
-                if j = 0 then 
-                  state <= PRELOAD;
-                else
-                  if j > width-1 then -- we stop the world computation once we reached the 
-                    state <= IDLE;
+              read_rq <= '1'; -- request an address read
+              read_address <= address_to_start_load; -- address to read
+              if right_torus = '0' then
+                if i = 1 then -- possible end of column
+                  if first_time = '1' then -- we need to start the writing of this new column
+                    start_writing <= '1';
+                    i <= i + 1;
                   else
-                    state <= INLINE;
+                    start_writing <= '0'; -- the next 3 line are not valid to write
+                    i <= WORLD_HEIGHT - 1; -- reset the line index
+                    j <= j + N_CELL - 2;
+                    read_state <= INLINE;
+                  end if;
+                  fisrt_time := not first_time; -- reset / unset of first_time check
+                else -- i/= 1, we stay in the current column
+                  if i = WORLD_HEIGHT - 1 then -- need to roll up
+                    i <= 0;
+                  else -- regular behavior
+                    i <= i +1; -- next line to be read
                   end if;
                 end if;
+              else
+                read_state <= POSTLOAD;
               end if;
             end if;
         end case;
