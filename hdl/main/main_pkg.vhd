@@ -14,6 +14,7 @@ package main_pkg is
 
   -- type declarations
   type WINDOW is array (0 to WINDOW_HEIGHT-1, 0 to N_CELL-1) of CELL_STATE;
+  type CELL_CTRL_STATE is (FREEZE, READ, WRITE, NORMAL);
 
 
 end package main_pkg;

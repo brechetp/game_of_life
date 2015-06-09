@@ -40,8 +40,14 @@ end entity addr_ctrl;
 
 architecture window of addr_ctrl is
 
-  signal s_axi_m2s:                axilite_gp_m2s;
-  signal s_axi_s2m:                axilite_gp_s2m;
+  signal s0_axi_m2s:                axilite_gp_m2s;
+  signal s0_axi_s2m:                axilite_gp_s2m;
+  signal s1_axi_m2s:                axi_gp_m2s;
+  signal s1_axi_s2m:                axi_gp_s2m;
+  signal m_axi_m2s:                axi_hp_m2s;
+  signal m_axi_s2m:                axi_hp_s2m;
+  signal gpi: std_ulogic_vector(7 downto 0);
+  signal gpo: std_ulogic_vector(7 downto 0);
   signal height:                   std_ulogic_vector(15 downto 0);
   signal width:                    std_ulogic_vector(15 downto 0);
   signal global_start:             std_ulogic; -- start global du module
@@ -53,6 +59,7 @@ architecture window of addr_ctrl is
   signal rsize:                    integer;
   signal ready_writing:            std_ulogic;
   signal read_request:             std_ulogic;
+  signal write_request: std_ulogic;
   signal read_cell_vector:           cell_vector(0 to N_CELL-1);
   signal write_cell_vector:          cell_vector(0 to N_CELL-3);
   signal done_reading:             std_ulogic;
@@ -76,16 +83,22 @@ begin
   port map(
     aclk      => aclk,
     aresetn   => aresetn,
-    s0_axi_m2s => s_axi_m2s,
-    s0_axi_s2m => s_axi_s2m
+    s0_axi_m2s => s0_axi_m2s,
+    s0_axi_s2m => s0_axi_s2m,
+    s1_axi_m2s => s1_axi_m2s,
+    s1_axi_s2m => s1_axi_s2m,
+    m_axi_m2s => m_axi_m2s,
+    m_axi_s2m => m_axi_s2m,
+    gpi => gpi,
+    gpo => gpo
   );
 
   i_axi_register_master: entity axi_register_lib.axi_register_master(rtl)
   port map(
     aclk         => aclk,
     aresetn      => aresetn,
-    m_axi_m2s    => s_axi_m2s,
-    m_axi_s2m    => s_axi_s2m,
+    m_axi_m2s    => s1_axi_m2s,
+    m_axi_s2m    => s1_axi_s2m,
     waddress      => waddress,
     raddress     => raddress,
     wsize        => wsize,
@@ -146,12 +159,10 @@ begin
           when START_LINE =>    
             -- start of a new column computation
             -- i is the line index and j the column one
-            if done_reading = '1' and READY_READING_CELL_CTRL = '1' then -- the axi register has done reading the memory, we can ask for another shot of data
-              if j = 0 then -- we are on the first column, we need to fetch the last cell (index in line = width-1)
-                read_state <= PRELOAD;
-              else -- we don't need to fetch last cell in line
-                read_state <= INLINE;
-              end if;
+            if j = 0 then -- we are on the first column, we need to fetch the last cell (index in line = width-1)
+              read_state <= PRELOAD;
+            else -- we don't need to fetch last cell in line
+              read_state <= INLINE;
             end if;
 
           when PRELOAD =>
@@ -173,6 +184,7 @@ begin
 
           when POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
             if done_reading = '1' and ready_reading_cell_ctrl = '1' then -- if we the read is up
+              done_reading_cell_ctrl <= '1';
               read_column := 0; -- we need the column 0 
               read_line := i; -- of the current line
               rsize <= 1; -- we only need 1 cell
@@ -201,6 +213,7 @@ begin
                 end if;
                 read_state <= INLINE;
               end if;
+            end if; -- end of done reading
 
           when INLINE => -- we are in the middle of the world
             if done_reading = '1' and ready_reading_cell_ctrl = '1' then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
@@ -222,8 +235,9 @@ begin
                   read_state <= POSTLOAD; -- mode right torus
                   read_column := j-1;
                   rsize <= WORLD_WIDTH - j + 1; -- number of cells to fetch inline
+                end if;
               end if;
-              offset_first_to_load := coordinates2offset(current_line, current_column);
+              offset_first_to_load := coordinates2offset(read_line, read_column);
               address_to_start_load :=r_base_address + offset_first_to_load(31 downto 6) & b"000000";
               place_in_first_word := offset_first_to_load(5 downto 3);
               for k in 0 to 7 loop -- init of the read_strobe array
@@ -234,7 +248,7 @@ begin
                 end if;
               end loop; -- end of the read_strobe init
               read_request <= '1'; -- request an address read
-              read_address <= std_ulogic_vector(address_to_start_load); -- address to read
+              raddress <= std_ulogic_vector(address_to_start_load); -- address to read
               if right_torus = '0' then
                 if i = 1 then -- possible end of column
                   if first_time = '1' then -- we need to start the writing of this new column
@@ -246,7 +260,7 @@ begin
                     j <= j + N_CELL - 2;
                     read_state <= INLINE;
                   end if;
-                  fisrt_time := not first_time; -- reset / unset of first_time check
+                first_time := not first_time; -- reset / unset of first_time check
                 else -- i/= 1, we stay in the current column
                   if i = WORLD_HEIGHT - 1 then -- need to roll up
                     i <= 0;
@@ -266,46 +280,42 @@ begin
 
   write_process: process(aclk)
     variable address_to_write: unsigned(31 downto 0); -- where to write address in memory
-    variable current_write_line: integer range -2 to WORLD_HEIGHT-1; -- write line index
-    variable current_write_column: natural range -1 to WORLD_WIDTH-1; -- write column index
+    variable write_line: integer range -2 to WORLD_HEIGHT-1; -- write line index
+    variable write_column: integer range -1 to WORLD_WIDTH-1; -- write column index
     variable offset_first_to_write: unsigned(31 downto 0); -- offset in the waddress
     variable place_in_first_word: unsigned(2 downto 0); -- word offset
     
   begin
-    if clk = '1';
+    if aclk = '1' then
       if aresetn = '0' then
-        current_write_line := 0;
-        current_write_column := 0;
+        write_line := 0;
+        write_column := 0;
         write_state <= W_IDLE;
         address_to_write := (others => '0');
         offset_first_to_write := (others => '0');
         place_in_first_word := (others => '0');
         wsize <= 0;
-        wadress <= (others => '0');
+        waddress <= (others => '0');
         write_strobe <= (others => '0');
         -- ...
       else
         case write_state is
           when W_IDLE => -- we wait for a new generation to be written
             if start_writing = '1' then -- driven by the read process, as we need to first read then write
-              write_state <= W_START; -- basically we will write tat address i-2
+              write_state <= W_START; -- basically we will write at address i-2
             end if;
 
           when W_START => -- we qre instructed to wompute waddress and to ask for writing
             write_request <= '0'; -- raised when something is to be written
+            done_writing_cell_ctrl <= '0';
 
             if ready_writing_cell_ctrl = '1' and done_writing = '1' then -- the new generation is ready and the write access is clear
               if i < 2 then -- the read head is in the first two line of a new column
-                write_line := i + WORLD_WEIGHT; -- we set the write line with torus regards
-                if j < (N_CELL*8 - 2) then
-                  write_column := j + WORLD_HEIGHT; -- writing the right-down corner
-                else
-                  write_column := j - (N_CELL)*8 - 2; -- write column must be set to the previous read one in this case
-                end if;
+                write_line := i + WORLD_HEIGHT; -- we set the write line with torus regards
               else
                 write_line := i - 2; -- we write the "middle" line
-                write_column := j; -- we write on the read column
               end if; -- write_line|column are assigned
+              write_column := j; -- we write on the read column
               if write_column + (N_CELL*8 - 2) - 1 > WORLD_WIDTH - 1 then
                 wsize <= WORLD_WIDTH - write_column; -- write_column + wsize - 1 = WORLD_WIDTH - 1
                 -- we don't want to write more than the place we have left
@@ -315,21 +325,23 @@ begin
 
               offset_first_to_write := coordinates2offset(write_line, write_column);
               address_to_write := w_base_address + offset_first_to_write(31 downto 6) & b"000000"; -- we write at this address 
-              place_in_first_word := offset_fisrt_to_write(5 downto 3); -- 3 bits to map the exaxt begining of the write
+              place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exaxt begining of the write
               for i in 0 to 7 loop
                 if i >= to_integer(place_in_first_word) then
-                  w_strobe(i) <= '1';
+                  write_strobe(i) <= '1';
                 else
-                  w_strobe(i) <= '0';
+                  write_strobe(i) <= '0';
                 end if;
               end loop;
 
               waddress <= std_ulogic_vector(address_to_write);
               write_request <= '1';
               
-              if write_line = WORLD_HEIGHT - 1 and write_column + (N_CELL*8 - 2) > WORLD_WIDTH then -- when we wrote the last line, we go to IDLE state waiting for another generation computation
+              if ((write_line = WORLD_HEIGHT - 1) and (write_column + (N_CELL*8 - 2) > WORLD_WIDTH)) or (start_writing = '0') then -- when we wrote the last line, we go to IDLE state waiting for another generation computation or we are asked to stop writing
                 write_state <= W_IDLE;
+              end if;
             end if; -- end of the if ready to write block
+
         end case;
       end if; -- end of the reset
     end if; -- end of the synconous block

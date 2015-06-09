@@ -24,13 +24,13 @@
 #	random_pkg
 .NOSYN: \
         cell_sim \
-        ca_sim
+        cell_ctrl_sim
 
 cell_sim: \
         celloux_lib.pack_cell \
         celloux_lib.cell
-ca_sim: \
+cell_ctrl_sim: \
         celloux_lib.pack_cell \
         celloux_lib.cell \
         main_lib.main_pkg \
-        main_lib.ca
+        main_lib.cell_ctrl
