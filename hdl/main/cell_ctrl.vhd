@@ -40,10 +40,45 @@ architecture arc of cell_ctrl is
   signal cells: window; -- the cells translated from the colors, 3 x N_CELL
   signal new_cells: CELL_VECTOR(0 to N_CELL-1);
   signal new_data: std_ulogic := '0';
+  signal state: CELL_CTRL_STATE;
 
 begin
 
   -- lock <= new_data;
+
+  state_process: process(clk)
+  begin
+    if clk = '1' then
+      if rstn = '0' then
+        state <= FREEZE;
+      else
+        case cell_ctrl_state is
+          when FREEZE =>
+            if DONE_WRITING = '1' and DONE_READING = '1' then
+              state <= NORMAL;
+            else
+              if DONE_WRITING = '1' then
+                state <= WRITE;
+              else
+                if DONE_READING = '1' then
+                  state <= READ;
+                end if;
+              end if;
+            end if;
+
+          when READ =>
+            if DONE_WRITING = '1' then
+              state <= NORMAL;
+            end if;
+
+          when WRITE =>
+            if DONE_READING = '1' then
+              state <= NORMAL;
+            end if;
+
+          when NORMAL => 
+            
+
   
   input: process(clk)
   begin
