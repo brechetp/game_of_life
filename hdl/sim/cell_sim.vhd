@@ -21,7 +21,6 @@ architecture sim of cell_sim is
   signal clk, rstn, stop_simulation: std_ulogic := '0';
   signal N, NE, E, SE, S, SW, W, NW: CELL_STATE;
   signal rand: unsigned(31 downto 0) := b"00101101101010101011100110101110";
-  signal index1, index2, index3, index4, index5, index6, index7, index8: natural range 0 to 3; -- indexes for the cells
 
 begin
 
