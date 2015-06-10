@@ -38,12 +38,79 @@ end entity cell_ctrl;
 architecture arc of cell_ctrl is
 
   signal cells: window; -- the cells translated from the colors, 3 x N_CELL
-  signal new_cells: CELL_VECTOR(0 to N_CELL-3); -- be aware of index bounds
-  signal new_data: std_ulogic := '0';
+  signal new_cells: CELL_VECTOR(0 to N_CELL-1);
+  --signal -- new_data: std_logic := 'L';
+  signal state: CELL_CTRL_STATE := FREEZE;
 
 begin
 
   -- lock <= new_data;
+
+  state_process: process(clk)
+  begin
+    if clk = '1' then
+      if rstn = '0' then
+        state <= FREEZE;
+      else
+        case state is
+          when FREEZE =>
+            if DONE_WRITING = '1' and DONE_READING = '1' then
+              state <= NORMAL;
+            else
+              if DONE_WRITING = '1' then
+                state <= WRITE;
+              else
+                if DONE_READING = '1' then
+                  state <= READ;
+                end if;
+              end if;
+            end if;
+
+          when READ =>
+            if DONE_READING = '0' then
+              if DONE_WRITING = '1' then
+                state <= WRITE;
+              else
+                state <= FREEZE;
+              end if;
+            else -- DONE_READING = '0'
+              if DONE_WRITING = '1' then
+                state <= NORMAL;
+              end if;
+            end if;
+
+          when WRITE =>
+            if DONE_WRITING = '0' then
+              if DONE_READING = '1' then
+                state <= READ;
+              else
+                state <= FREEZE;
+              end if;
+            else
+              if DONE_READING = '1' then
+                state <= NORMAL;
+              end if;
+            end if;
+
+          when NORMAL => 
+            if done_writing = '0' then
+              if done_reading = '0' then
+                state <= FREEZE;
+              else
+                state <= READ;
+              end if;
+            else
+              if done_reading = '0' then
+                state <= WRITE;
+              end if;
+            end if;
+        end case;
+      end if;
+    end if;
+  end process state_process;
+
+            
+
   
   input: process(clk)
   begin
@@ -55,20 +122,17 @@ begin
           cells(2, i) <= DEAD;
         end loop;
         READY_READING <= '0';
-        new_data <= '0';
+        -- new_data <= 'L';
       else
         READY_READING <= '0'; -- unless we say so, the memory is not ready to be overwritten
-        if DONE_WRITING = '1' then -- we can't do anything unless the past generation has been written to memory
-          new_data <= '0'; -- new_data is a lock to prevent overwritting cached cells
-          if (DONE_READING = '1') then -- if the memory has been read successfuly
-            for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
-              cells(0,i) <= cells(1,i);
-              cells(1,i) <= cells(2,i);
-              cells(2,i)  <= (read_cell_vector(i));
-            end loop;
-            READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written), DONE_READING will be set to 0
-            new_data <= '1'; -- we can trust the computation of the generation g
-          end if;
+        if (state = READ) or (state = NORMAL) then -- we can't do anything unless the past generation has been written to memory
+          for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
+            cells(0,i) <= cells(1,i);
+            cells(1,i) <= cells(2,i);
+            cells(2,i)  <= (read_cell_vector(i));
+          end loop;
+          READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written), DONE_READING will be set to 0
+          -- new_data <= 'H'; -- we can trust the computation of the generation g
         end if;
       end if; -- end of the reset block
     end if; -- end of the synchronous block
@@ -77,7 +141,7 @@ begin
 
   GEN: for i in 1 to ( N_CELL-2 ) generate -- we create N_CELL-2 cells, mapped with each others
     CELL: entity CELLOUX_LIB.CELL(syn)
-    port map(clk, rstn, '1', cells(0,i), cells(0,i+1), cells(1,i+1), cells(2,i+1), cells(2,i), cells(2,i-1), cells(1,i-1), cells(0,i-1), new_cells(i-1));
+    port map(clk, rstn, '1', cells(0,i), cells(0,i+1), cells(1,i+1), cells(2,i+1), cells(2,i), cells(2,i-1), cells(1,i-1), cells(0,i-1), cells(1, i), new_cells(i));
   end generate GEN;
 
   output: process(clk)
@@ -90,11 +154,12 @@ begin
         READY_WRITING <= '0';
       else
         READY_WRITING <= '0'; -- we set READY_WRITING to 0 unless we cache the new cells in the write_cell_vector
-        if (DONE_WRITING = '1') and (new_data = '1') then -- checks if new data is to be output and if the old one has been written
+        if (state = WRITE or state = NORMAL) then -- checks if new data is to be output and if the old one has been written
           for i in 0 to ( N_CELL-3 ) loop
             write_cell_vector(i) <= new_cells(i); -- output the soon-to-be-written cells
           end loop;
           READY_WRITING <= '1'; -- the DONE_WRITING will be set to 0 by address controller ?
+          -- new_data <= 'L'; -- resolved type
         end if;
       end if; -- end of the reset block
     end if;-- end of the syncronous block

@@ -11,6 +11,7 @@ entity cell is
     clk, rstn: in std_ulogic; -- clock ans sychronous reset (active low)
     mode: in bit; -- mode will serve initialization purposes
     N, NE, E, SE, S, SW, W, NW: in CELL_STATE; -- the cell neighbors
+    self_state: in CELL_STATE; -- the gen n state
     state_out: out CELL_STATE
   );
 end entity cell;
@@ -19,41 +20,37 @@ end entity cell;
 
 architecture syn of cell is
 
-  signal state: CELL_STATE;
-
 begin
 
-
-  state_out <= state; -- we copy our working state to output
 
   process(clk)
     variable neighbour_count: BIT_COUNT; -- gives the count of neighbours
   begin
     if clk = '1' and clk'event then -- on rising edge, we assume neighbors are ready
       if rstn = '0' then -- the reset is set
-        state <= DEAD;
+        state_out <= DEAD;
       else
         neighbour_count := three_count(N, NE, E, SE, S, SW, W, NW); -- we redefined the add operation
-        case state is -- we check the old state
+        case self_state is -- we check the old state
           when DEAD =>
             if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- reproduction
-              state <= NEWALIVE;
+              state_out <= NEWALIVE;
             end if;
           when ALIVE =>
             if neighbour_count(1) = '0' then -- count /= 2,3 -> death
-              state <= NEWDEAD;
+              state_out <= NEWDEAD;
             end if;
           when NEWDEAD =>
             if neighbour_count(0) = '1' and neighbour_count(1) = '1' then -- count =3 -> reproduction
-              state <= NEWALIVE;
+              state_out <= NEWALIVE;
             else
-              state <= DEAD;
+              state_out <= DEAD;
             end if;
           when NEWALIVE =>
             if neighbour_count(1) = '0' then --count /= 2,3  death
-              state <= NEWDEAD;
+              state_out <= NEWDEAD;
             else
-              state <= ALIVE;
+              state_out <= ALIVE;
             end if;
         end case ; -- end of the case switch
       end if; -- end of the reset if

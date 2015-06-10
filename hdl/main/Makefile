@@ -6,7 +6,7 @@
 GHDL=ghdl
 GHDLFLAGS= --work=main_lib --workdir=main_lib/ -P../celloux/celloux_lib
 GHDLRUNFLAGS=
-VHD_FILE=$(wildcard *.vhd)
+VHD_FILES=$(wildcard *.vhd)
 
 # Default target : elaborate
 all : init elab
@@ -28,7 +28,7 @@ init: force
 	# /usr/local/ghdl/translate/lib//v93/ieee/../../../../libraries/ieee/numeric_std.v93
 	# /usr/local/ghdl/translate/lib//v93/ieee/../../../../libraries/ieee/numeric_std-body.v93
 	# /Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/pack_cell.vhd
-	$(GHDL) -a $(GHDLFLAGS) $(FILES)
+	$(GHDL) -a $(GHDLFLAGS) $(VHD_FILES)
 	# /Users/Pierre/Documents/ElecDesign/game_of_life/hdl/celloux/cell.vhd
 
 force:

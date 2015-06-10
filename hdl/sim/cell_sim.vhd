@@ -19,8 +19,17 @@ architecture sim of cell_sim is
 -- much simpler but we could use different names and bind signal names to port
 -- names in the instanciation of cell.
   signal clk, rstn, stop_simulation: std_ulogic := '0';
-  signal N, NE, E, SE, S, SW, W, NW: CELL_STATE;
+  signal N, NE, E, SE, S, SW, W, NW, SELF: CELL_STATE;
   signal rand: unsigned(31 downto 0) := b"00101101101010101011100110101110";
+  signal index1: integer;
+  signal index2: integer;
+  signal index3: integer;
+  signal index4: integer;
+  signal index5: integer;
+  signal index6: integer;
+  signal index7: integer;
+  signal index8: integer;
+  signal index: integer;
 
 begin
 
@@ -57,6 +66,7 @@ begin
     index6 <= to_integer(rand(21 downto 20));
     index7 <= to_integer(rand(25 downto 24));
     index8 <= to_integer(rand(29 downto 28));
+    index <= to_integer(rand(3 downto 2));
   end process slice;
 
 -- this process generates the input sequence for the signal neighbours.
@@ -70,6 +80,7 @@ begin
     SW <= DEAD;
     W  <= DEAD;
     NW <= DEAD;
+    SELF <= DEAD;
     for i in 1 to 511 loop
       if clk = '1' then
         N <= CELL_STATE'VAL(index1);
@@ -80,6 +91,7 @@ begin
         SW <= CELL_STATE'VAL(index6);
         W <= CELL_STATE'VAL(index7);
         NW <= CELL_STATE'VAL(index8);
+        SELF <= CELL_STATE'VAL(index);
         rand <= resize(to_unsigned(1664525, 32) * rand + to_unsigned(1013904223, 32), 32);
       end if;
       wait on clk;
@@ -106,6 +118,7 @@ begin
     SW        => SW,
     W         => W,
     NW        => NW,
+    self_state => SELF,
     state_out => state
   );
 
