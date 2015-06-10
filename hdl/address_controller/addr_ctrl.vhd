@@ -32,50 +32,143 @@ library axi_register_lib;
 
 entity addr_ctrl is
    port(
-         aclk:     in std_ulogic; -- Clock
-         aresetn:  in std_ulogic;  -- Reset
-         computation_start: in std_ulogic
+	aclk:     in std_ulogic; -- Clock
+	aresetn:  in std_ulogic;  -- Reset
+        computation_start: in std_ulogic;
+	--------------------------------
+	-- AXI lite slave port s0_axi --
+	--------------------------------
+	-- Inputs (master to slave) --
+	------------------------------
+	-- Read address channel
+	s0_axi_araddr:  in  std_logic_vector(11 downto 0);
+	s0_axi_arprot:  in  std_logic_vector(2 downto 0);
+	s0_axi_arvalid: in  std_logic;
+	-- Read data channel
+	s0_axi_rready:  in  std_logic;
+	-- Write address channel
+	s0_axi_awaddr:  in  std_logic_vector(11 downto 0);
+	s0_axi_awprot:  in  std_logic_vector(2 downto 0);
+	s0_axi_awvalid: in  std_logic;
+	-- Write data channel
+	s0_axi_wdata:   in  std_logic_vector(31 downto 0);
+	s0_axi_wstrb:   in  std_logic_vector(3 downto 0);
+	s0_axi_wvalid:  in  std_logic;
+	-- Write response channel
+	s0_axi_bready:  in  std_logic;
+	-------------------------------
+	-- Outputs (slave to master) --
+	-------------------------------
+	-- Read address channel
+	s0_axi_arready: out std_logic;
+	-- Read data channel
+	s0_axi_rdata:   out std_logic_vector(31 downto 0);
+	s0_axi_rresp:   out std_logic_vector(1 downto 0);
+	s0_axi_rvalid:  out std_logic;
+	-- Write address channel
+	s0_axi_awready: out std_logic;
+	-- Write data channel
+	s0_axi_wready:  out std_logic;
+	-- Write response channel
+	s0_axi_bvalid:  out std_logic;
+	s0_axi_bresp:   out std_logic_vector(1 downto 0);
+
+	---------------------------
+	-- AXI master port m_axi --
+	---------------------------
+	-------------------------------
+	-- Outputs (slave to master) --
+	-------------------------------
+	-- Read address channel
+	m_axi_arid:    out std_logic_vector(5 downto 0);
+	m_axi_araddr:  out std_logic_vector(31 downto 0);
+	m_axi_arlen:   out std_logic_vector(3 downto 0);
+	m_axi_arsize:  out std_logic_vector(2 downto 0);
+	m_axi_arburst: out std_logic_vector(1 downto 0);
+	m_axi_arlock:  out std_logic_vector(1 downto 0);
+	m_axi_arcache: out std_logic_vector(3 downto 0);
+	m_axi_arprot:  out std_logic_vector(2 downto 0);
+	m_axi_arqos:   out std_logic_vector(3 downto 0);
+	m_axi_arvalid: out std_logic;
+	-- Read data channel
+	m_axi_rready:  out std_logic;
+	-- Write address channel
+	m_axi_awid:    out std_logic_vector(5 downto 0);
+	m_axi_awaddr:  out std_logic_vector(31 downto 0);
+	m_axi_awlen:   out std_logic_vector(3 downto 0);
+	m_axi_awsize:  out std_logic_vector(2 downto 0);
+	m_axi_awburst: out std_logic_vector(1 downto 0);
+	m_axi_awlock:  out std_logic_vector(1 downto 0);
+	m_axi_awcache: out std_logic_vector(3 downto 0);
+	m_axi_awprot:  out std_logic_vector(2 downto 0);
+	m_axi_awqos:   out std_logic_vector(3 downto 0);
+	m_axi_awvalid: out std_logic;
+	-- Write data channel
+	m_axi_wid:     out std_logic_vector(5 downto 0);
+	m_axi_wdata:   out std_logic_vector(63 downto 0);
+	m_axi_wstrb:   out std_logic_vector(7 downto 0);
+	m_axi_wlast:   out std_logic;
+	m_axi_wvalid:  out std_logic;
+	-- Write response channel
+	m_axi_bready:  out std_logic;
+	------------------------------
+	-- Inputs (slave to master) --
+	------------------------------
+	-- Read address channel
+	m_axi_arready: in  std_logic;
+	-- Read data channel
+	m_axi_rid:     in  std_logic_vector(5 downto 0);
+	m_axi_rdata:   in  std_logic_vector(63 downto 0);
+	m_axi_rresp:   in  std_logic_vector(1 downto 0);
+	m_axi_rlast:   in  std_logic;
+	m_axi_rvalid:  in  std_logic;
+	-- Write address channel
+	m_axi_awready: in  std_logic;
+	-- Write data channel
+	m_axi_wready:  in  std_logic;
+	-- Write response channel
+	m_axi_bvalid:  in  std_logic;
+	m_axi_bid:     in  std_logic_vector(5 downto 0);
+	m_axi_bresp:   in  std_logic_vector(1 downto 0)
  );
 end entity addr_ctrl;
 
 architecture window of addr_ctrl is
 
-  signal s0_axi_m2s:                axilite_gp_m2s;
-  signal s0_axi_s2m:                axilite_gp_s2m;
-  signal s1_axi_m2s:                axi_gp_m2s;
-  signal s1_axi_s2m:                axi_gp_s2m;
-  signal m_axi_m2s:                axi_hp_m2s;
-  signal m_axi_s2m:                axi_hp_s2m;
-  signal gpi: std_ulogic_vector(7 downto 0);
-  signal gpo: std_ulogic_vector(7 downto 0);
-  signal height:                   std_ulogic_vector(15 downto 0);
-  signal width:                    std_ulogic_vector(15 downto 0);
-  signal global_start:             std_ulogic; -- start global du module
-  signal compute_start:            std_ulogic; -- start signal for a new generation computation
-  signal color:                    std_ulogic_vector(31 downto 0);
-  signal waddress:                 std_ulogic_vector(31 downto 0);
-  signal raddress:                 std_ulogic_vector(31 downto 0);
-  signal wsize:                    integer;
-  signal rsize:                    integer;
-  signal ready_writing:            std_ulogic;
-  signal read_request:             std_ulogic;
-  signal write_request: std_ulogic;
-  signal read_cell_vector:           cell_vector(0 to N_CELL-1);
-  signal write_cell_vector:          cell_vector(0 to N_CELL-3);
-  signal done_reading:             std_ulogic;
-  signal done_writing:             std_ulogic;
-  signal done_reading_cell_ctrl:   std_ulogic;
-  signal done_writing_cell_ctrl:   std_ulogic;
-  signal ready_reading_cell_ctrl:  std_ulogic;
-  signal ready_writing_cell_ctrl:  std_ulogic;
-  signal read_state: ADDR_CTRL_READ_STATE;
-  signal write_state:              ADDR_CTRL_WRITE_STATE;
-  signal read_strobe:              std_ulogic_vector(0 to 7); -- to remember where to read the first cell
-  signal write_strobe: std_ulogic_vector(0 to 7); -- a logical mask to write in memory
-  signal read_offset:              integer range 0 to 79; -- tell how many cells have been written to memory
-  signal i: NATURAL range 0 to WORLD_HEIGHT-1; -- line index
-  signal j: NATURAL range 0 to WORLD_WIDTH-1; -- column index
-  signal start_writing: std_ulogic; -- to start the write process
+  signal s0_axi_m2s:		    axilite_gp_m2s;
+  signal s0_axi_s2m:		    axilite_gp_s2m;
+  signal m_axi_m2s:		    axi_hp_m2s;
+  signal m_axi_s2m:		    axi_hp_s2m;
+  signal gpi:			    std_ulogic_vector(7 downto 0);
+  signal gpo:			    std_ulogic_vector(7 downto 0);
+  signal height:		    std_ulogic_vector(15 downto 0);
+  signal width:			    std_ulogic_vector(15 downto 0);
+  signal global_start:		    std_ulogic; -- start global du module
+  signal compute_start:		    std_ulogic; -- start signal for a new generation computation
+  signal color:			    std_ulogic_vector(31 downto 0);
+  signal waddress:		    std_ulogic_vector(31 downto 0);
+  signal raddress:		    std_ulogic_vector(31 downto 0);
+  signal wsize:			    integer;
+  signal rsize:			    integer;
+  signal ready_writing:		    std_ulogic;
+  signal read_request:		    std_ulogic;
+  signal write_request:		    std_ulogic;
+  signal read_cell_vector:	    cell_vector(0 to N_CELL-1);
+  signal write_cell_vector:	    cell_vector(0 to N_CELL-3);
+  signal done_reading:		    std_ulogic;
+  signal done_writing:		    std_ulogic;
+  signal done_reading_cell_ctrl:    std_ulogic;
+  signal done_writing_cell_ctrl:    std_ulogic;
+  signal ready_reading_cell_ctrl:   std_ulogic;
+  signal ready_writing_cell_ctrl:   std_ulogic;
+  signal read_state:		    ADDR_CTRL_READ_STATE;
+  signal write_state:		    ADDR_CTRL_WRITE_STATE;
+  signal read_strobe:		    std_ulogic_vector(0 to 7); -- to remember where to read the first cell
+  signal write_strobe:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
+  signal read_offset:		    integer range 0 to 79; -- tell how many cells have been written to memory
+  signal i:			    NATURAL range 0 to WORLD_HEIGHT-1; -- line index
+  signal j:			    NATURAL range 0 to WORLD_WIDTH-1; -- column index
+  signal start_writing:		    std_ulogic; -- to start the write process
 
 begin
 
@@ -85,10 +178,6 @@ begin
     aresetn   => aresetn,
     s0_axi_m2s => s0_axi_m2s,
     s0_axi_s2m => s0_axi_s2m,
-    s1_axi_m2s => s1_axi_m2s,
-    s1_axi_s2m => s1_axi_s2m,
-    m_axi_m2s => m_axi_m2s,
-    m_axi_s2m => m_axi_s2m,
     gpi => gpi,
     gpo => gpo
   );
@@ -97,9 +186,9 @@ begin
   port map(
     aclk         => aclk,
     aresetn      => aresetn,
-    m_axi_m2s    => s1_axi_m2s,
-    m_axi_s2m    => s1_axi_s2m,
-    waddress      => waddress,
+    m_axi_m2s    => m_axi_m2s,
+    m_axi_s2m    => m_axi_s2m,
+    waddress	 => waddress,
     raddress     => raddress,
     wsize        => wsize,
     rsize        => rsize,
@@ -134,8 +223,6 @@ begin
     variable address_to_start_load:   unsigned(31 downto 0); -- address to read in memory
     variable place_in_first_word:     unsigned(2 downto 0); -- offset in the 64 bit space mapped by the address
     variable right_torus: std_ulogic := '0'; -- logic test to check if we are with a right torus
-
-
 
   begin
     if aclk = '1' then -- syncronous block
@@ -346,6 +433,90 @@ begin
       end if; -- end of the reset
     end if; -- end of the synconous block
   end process write_process;
+
+-----------------------------------------------------------------
+-------------------------- AXI wrapper --------------------------
+-- AXI slave
+  s0_axi_m2s.araddr  <= std_ulogic_vector(X"00000" & s0_axi_araddr);
+  s0_axi_m2s.arprot  <= std_ulogic_vector(s0_axi_arprot);
+  s0_axi_m2s.arvalid <= s0_axi_arvalid;
+
+  s0_axi_m2s.rready  <= s0_axi_rready;
+
+  s0_axi_m2s.awaddr  <= std_ulogic_vector(X"00000" & s0_axi_awaddr);
+  s0_axi_m2s.awprot  <= std_ulogic_vector(s0_axi_awprot);
+  s0_axi_m2s.awvalid <= s0_axi_awvalid;
+
+  s0_axi_m2s.wdata   <= std_ulogic_vector(s0_axi_wdata);
+  s0_axi_m2s.wstrb   <= std_ulogic_vector(s0_axi_wstrb);
+  s0_axi_m2s.wvalid  <= s0_axi_wvalid;
+
+  s0_axi_m2s.bready  <= s0_axi_bready;
+
+  s0_axi_arready     <= s0_axi_s2m.arready;
+
+  s0_axi_rdata       <= std_logic_vector(s0_axi_s2m.rdata);
+  s0_axi_rresp       <= std_logic_vector(s0_axi_s2m.rresp);
+  s0_axi_rvalid      <= s0_axi_s2m.rvalid;
+
+  s0_axi_awready     <= s0_axi_s2m.awready;
+
+  s0_axi_wready      <= s0_axi_s2m.wready;
+
+  s0_axi_bvalid      <= s0_axi_s2m.bvalid;
+  s0_axi_bresp       <= std_logic_vector(s0_axi_s2m.bresp);
+
+-- AXI master
+
+  m_axi_arid         <= std_logic_vector(m_axi_m2s.arid);
+  m_axi_araddr       <= std_logic_vector(m_axi_m2s.araddr);
+  m_axi_arlen        <= std_logic_vector(m_axi_m2s.arlen);
+  m_axi_arsize       <= std_logic_vector(m_axi_m2s.arsize);
+  m_axi_arburst      <= std_logic_vector(m_axi_m2s.arburst);
+  m_axi_arlock       <= std_logic_vector(m_axi_m2s.arlock);
+  m_axi_arcache      <= std_logic_vector(m_axi_m2s.arcache);
+  m_axi_arprot       <= std_logic_vector(m_axi_m2s.arprot);
+  m_axi_arqos        <= std_logic_vector(m_axi_m2s.arqos);
+  m_axi_arvalid      <= m_axi_m2s.arvalid;
+
+  m_axi_rready       <= m_axi_m2s.rready;
+
+  m_axi_awid         <= std_logic_vector(m_axi_m2s.awid);
+  m_axi_awaddr       <= std_logic_vector(m_axi_m2s.awaddr);
+  m_axi_awlen        <= std_logic_vector(m_axi_m2s.awlen);
+  m_axi_awsize       <= std_logic_vector(m_axi_m2s.awsize);
+  m_axi_awburst      <= std_logic_vector(m_axi_m2s.awburst);
+  m_axi_awlock       <= std_logic_vector(m_axi_m2s.awlock);
+  m_axi_awcache      <= std_logic_vector(m_axi_m2s.awcache);
+  m_axi_awprot       <= std_logic_vector(m_axi_m2s.awprot);
+  m_axi_awqos        <= std_logic_vector(m_axi_m2s.awqos);
+  m_axi_awvalid      <= m_axi_m2s.awvalid;
+
+  m_axi_wid          <= std_logic_vector(m_axi_m2s.wid);
+  m_axi_wdata        <= std_logic_vector(m_axi_m2s.wdata);
+  m_axi_wstrb        <= std_logic_vector(m_axi_m2s.wstrb);
+  m_axi_wlast        <= m_axi_m2s.wlast;
+  m_axi_wvalid       <= m_axi_m2s.wvalid;
+
+  m_axi_bready       <= m_axi_m2s.bready;
+
+  m_axi_s2m.arready  <= m_axi_arready;
+
+  m_axi_s2m.rid      <= std_ulogic_vector(m_axi_rid);
+  m_axi_s2m.rdata    <= std_ulogic_vector(m_axi_rdata);
+  m_axi_s2m.rresp    <= std_ulogic_vector(m_axi_rresp);
+  m_axi_s2m.rlast    <= m_axi_rlast;
+  m_axi_s2m.rvalid   <= m_axi_rvalid;
+
+  m_axi_s2m.awready  <= m_axi_awready;
+
+  m_axi_s2m.wready   <= m_axi_wready;
+
+  m_axi_s2m.bvalid   <= m_axi_bvalid;
+  m_axi_s2m.bid      <= std_ulogic_vector(m_axi_bid);
+  m_axi_s2m.bresp    <= std_ulogic_vector(m_axi_bresp);
+
+
 end;
 
 
