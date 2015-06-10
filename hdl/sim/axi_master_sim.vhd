@@ -77,8 +77,11 @@ begin
         r_strobe    <= (others => '1');
         wc_vector   <= (1 => ALIVE, 5 => NEWALIVE, others => DEAD);
         r_offset    <= 2;
-      else
+      elsif cpt > 10 then
         write_rq    <= '0' ;
+        m_axi_s2m.wready <= '1';
+      else
+        write_rq    <=  '0';
       end if;
       if cpt = 50 then
         stop_simulation <= '1';
