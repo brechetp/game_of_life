@@ -57,6 +57,20 @@ architecture rtl of axi_register_master is
     signal rstate: rstate_type;
     signal wstate: wstate_type;
 begin
+  -- Signals driven at constant value
+  -- We do not use transaction id, Quality of service
+  -- We are accessing unsecured data
+  m_axi_m2s.arid    <= (others => '0');
+  m_axi_m2s.arlock  <= (others => '0');
+  m_axi_m2s.arcache <= (others => '0');
+  m_axi_m2s.arprot  <= (others => '0');
+  m_axi_m2s.arqos   <= (others => '0');
+  m_axi_m2s.awid    <= (others => '0');
+  m_axi_m2s.awlock  <= (others => '0');
+  m_axi_m2s.awprot  <= (others => '0');
+  m_axi_m2s.awqos   <= (others => '0');
+  m_axi_m2s.wid	    <= (others => '0');
+
   read_pr: process(aclk)
     variable read_cell_number:integer range 0 to 80;
     variable read_word_cpt:   integer range 0 to 16;  
