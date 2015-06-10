@@ -26,6 +26,7 @@
 addr_ctrl_pkg: \ 
         main_lib.main_pkg
 adr_ctr: \
+        axi_lib.axi_pkg \
         addr_ctrl_pkg \
         celloux_lib.pack_cell \
         celloux_lib.cell
