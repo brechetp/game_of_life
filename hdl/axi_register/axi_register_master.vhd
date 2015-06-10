@@ -58,8 +58,8 @@ architecture rtl of axi_register_master is
     signal wstate: wstate_type;
 begin
   read_pr: process(aclk)
-    variable read_cell_number:integer range 0 to 79;
-    variable read_word_cpt:   integer range 0 to 15;  
+    variable read_cell_number:integer range 0 to 80;
+    variable read_word_cpt:   integer range 0 to 16;  
   begin
     if rising_edge(aclk) then
       if aresetn = '0' then
@@ -79,6 +79,7 @@ begin
           when request=>
             if m_axi_s2m.arready <= '1' then
               m_axi_m2s.arvalid	<=  '0';
+              m_axi_m2s.rready  <=  '1';
               rstate	        <=  read;
               read_cell_number  :=  0;		--  Reset cpt value for next read.
               read_word_cpt	    :=  0;
@@ -93,8 +94,9 @@ begin
               end loop;
               read_word_cpt := read_word_cpt + 1;   --  We've just read a part of the burst   
               if m_axi_s2m.rlast	= '1' then  --  Last part of the burst
-                done_reading<=  '1';		    --  We finished our loading job
-                rstate	    <=	idle;
+                done_reading      <=  '1';		    --  We finished our loading job
+                m_axi_m2s.rready  <=  '0';
+                rstate	          <=  idle;
               end if;
             end if;
         end case;
@@ -103,7 +105,7 @@ begin
   end process read_pr;
 
   write_pr: process(aclk)
-    variable write_word_cpt:    integer range 0 to 15;
+    variable write_word_cpt:    integer range 0 to 16;
     variable write_cell_number: integer range 0 to 79;
     variable tmp:               integer range 0 to 8;
   begin
@@ -139,13 +141,13 @@ begin
               m_axi_m2s.awvalid	<=  '0';
               wstate	    	<=  write;
               write_cell_number	:=  0;		--  Reset cpt value for next write.
-              tmp		        :=  0;
+              tmp		        :=  1;      
               write_word_cpt	:=  0;
             end if;
           when write=>
             if m_axi_s2m.wready = '1' then            --  We wrote one.
               m_axi_m2s.wstrb	<= "11111111";        --  For the other word we write everything (We may need a final strobe, we can compute it ourselves)
-              write_cell_number := tmp;	              --  We refresh the number of cell written in memory  
+              write_cell_number := write_cell_number + tmp -1;	--  We refresh the number of cell written in memory  
               write_word_cpt    := write_word_cpt + 1;--  We've send another part of the burst
               tmp               :=  0;
               for i in 0 to 7 loop

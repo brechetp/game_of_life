@@ -70,16 +70,28 @@ begin
       cpt := 0;
     elsif clk = '1' then
       cpt := cpt +1;
-      if cpt = 1 then
+      read_rq <= '0';
+      write_rq <= '0';
+      if cpt = 9 then
         write_rq	<= '1';
         wsize	    <=  9;
         w_strobe	<=  "00001111";
         r_strobe    <= (others => '1');
         wc_vector   <= (1 => ALIVE, 5 => NEWALIVE, others => DEAD);
-        r_offset    <= 2;
-      elsif cpt > 10 then
-        write_rq    <= '0' ;
+        r_offset    <= 0;
+      elsif cpt = 10 then
         m_axi_s2m.wready <= '1';
+      elsif cpt = 20 then
+        read_rq <= '1';
+        rsize   <=  9;
+        r_strobe<= "00001111";
+      elsif cpt = 23 then
+        m_axi_s2m.rvalid <= '1';
+        m_axi_s2m.rdata  <= (others => '0');
+      elsif cpt = 24 then
+        m_axi_s2m.rdata  <= (others => '1');
+      elsif cpt = 32 then
+        m_axi_s2m.rlast   <= '1';
       else
         write_rq    <=  '0';
       end if;
