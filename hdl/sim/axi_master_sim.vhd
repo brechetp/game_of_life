@@ -17,7 +17,7 @@ library axi_register_lib;
 -- the entity of a simulation environment usually has no input output ports.
 -- file cell_sim_arc.vhd
 entity axi_master_sim is
-  port(	m_axi_m2s: out axi_gp_m2s;
+  port(	m_axi_m2s: out axi_hp_m2s;
 	done_writing, done_reading: out std_ulogic;
 	rc_vector: out cell_vector(0 to 79)
   );
@@ -29,7 +29,7 @@ architecture sim of axi_master_sim is
 -- signals are the same as the name of the ports of the entity cell because it is
 -- much simpler but we could use different names and bind signal names to port
 -- names in the instanciation of cell.
-  signal m_axi_s2m: axi_gp_s2m;
+  signal m_axi_s2m: axi_hp_s2m;
   signal clk:             std_ulogic;
   signal stop_simulation: std_ulogic := '0';
   signal aresetn:   std_ulogic := '0';

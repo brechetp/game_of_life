@@ -34,7 +34,7 @@ entity axi_register is
     height:        out std_ulogic_vector(15 downto 0); 	-- Height of the field
     width:         out std_ulogic_vector(15 downto 0); 	-- Width of the field
     start:	   out std_ulogic;			-- Start signal for the simulation
-    color:	   out std_ulogic_vector(31 downto 0); 	-- Color scale (grey scale)
+    color:	   out std_ulogic_vector(31 downto 0) 	-- Color scale (grey scale)
   );
 end entity axi_register;
 
