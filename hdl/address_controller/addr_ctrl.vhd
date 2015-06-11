@@ -165,6 +165,7 @@ architecture window of addr_ctrl is
   signal write_state:		    ADDR_CTRL_WRITE_STATE;
   signal read_strobe:		    std_ulogic_vector(0 to 7); -- to remember where to read the first cell
   signal write_strobe:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
+  signal write_strobe_last:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal read_offset:		    integer range 0 to 79; -- tell how many cells have been written to memory
   signal i:			    NATURAL range 0 to WORLD_HEIGHT-1; -- line index
   signal j:			    NATURAL range 0 to WORLD_WIDTH-1; -- column index
@@ -199,7 +200,8 @@ begin
     done_writing => done_writing,
     r_strobe     => read_strobe,
     w_strobe     => write_strobe,
-    r_offset     => read_offset -- the offset of the already valid cells
+    r_offset     => read_offset, -- the offset of the already valid cells
+    w_strobe_last => write_strobe_last
   );
 
   i_cell_ctrl: entity main_lib.cell_ctrl
@@ -255,7 +257,7 @@ begin
           when PRELOAD =>
             -- PRELOAD state
             -- whenever j is at the border of the world, we fetch
-            if (ready_reading_ctrl = '1') or (init = '1') then --TODO think about the initialisation.
+            if (ready_reading_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
               init                    :=  '0';
               done_reading_cell_ctrl  <= '0'; -- the next cells are not valid
               read_line               := i;
@@ -393,7 +395,7 @@ begin
         wsize                 <= 0;
         waddress              <= (others => '0');
         write_strobe          <= (others => '0');
-        write_strobe_final    <= (others => '0');
+        write_strobe_last    <= (others => '0');
         cpt                   := 0;
         -- ...
       else
@@ -401,7 +403,7 @@ begin
         done_writing_cell_ctrl <= '0';            --  Will be raised one clk cycle to notify the cell ctrl that the cells have been written 
         case write_state is
           when W_IDLE =>                          --  We wait for a new generation to be written
-            done_writing_cell_ctrl = '1';
+            done_writing_cell_ctrl <= '1';
             if ready_writing_cell_ctrl = '1' then --  Driven by the cell ctrl. Indicate that a value to good to be written
               cpt := cpt+1;
               if cpt =0 then
@@ -416,13 +418,13 @@ begin
               offset_first_to_write := coordinates2offset(write_line, write_column);
               address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
               place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
-              if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again
+              if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
                 wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)) -- Wsize <= (WORLD_WIDTH -1 -j)/8
                 -- We don't want overflow on other addresses
-              elsif place_in_first_word = "000" then
-                wsize <= 8;
+              elsif place_in_first_word <= "001" then
+                wsize <= 8; -- we don't overflow on trailing 64-bit words
               else  place_in_first_word > "001" then
-                wsize <= 9;
+                wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
               end if;
               for i in 0 to 7 loop
                 if i >= to_integer(place_in_first_word) then
@@ -450,10 +452,10 @@ begin
             end if;                     --  End of the if ready to write block
           when W_WAIT =>                --  We launched a request and are waiting for it to finish
             if done_writing = '1' then  --  The request is finished
-              cpt = cpt + 1;            --  The next line to write will be cpt+1
+              cpt := cpt + 1;            --  The next line to write will be cpt+1
               write_state <= W_START;
               -- TODO add test finished column, go to W_START and reset cpt
-              if ((write_line = WORLD_HEIGHT - 1) and (write_column + (N_CELL*8 - 2) > WORLD_WIDTH)) then -- TODO See this conditionn again-- when we wrote the last line, we go to IDLE state waiting for another generation computation or we are asked to stop writing
+              if ((write_line = WORLD_HEIGHT - 1) and (write_column + (N_CELL - 2) > WORLD_WIDTH)) then -- TODO See this conditionn again-- when we wrote the last line, we go to IDLE state waiting for another generation computation or we are asked to stop writing
                 write_state <= W_IDLE;
               elsif ((write_line = WORLD_HEIGHT - 1) then
                 write_state <=

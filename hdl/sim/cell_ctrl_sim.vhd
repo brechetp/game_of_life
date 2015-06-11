@@ -10,10 +10,8 @@ use main_lib.main_pkg.all;
 
 entity cell_ctrl_sim is
   port(cells : out CELL_VECTOR(0 to N_CELL-3);
-      RR, RW: out std_ulogic;
-      ctrl_state: out CELL_CTRL_STATE;
-      cell_window: out window;
-      last_state: out CELL_VECTOR(0 to N_CELL-1));
+      RR, RW: out std_ulogic
+    );
 end entity cell_ctrl_sim;
 
 architecture sim of cell_ctrl_sim is
@@ -102,11 +100,7 @@ begin
    DONE_READING => DR,
    DONE_WRITING => DW,
    read_cell_vector => read_cell_vector,
-   write_cell_vector => cells,
-   state_out => ctrl_state,
-   window_out => cell_window,
-   last_cell => last_state
-   --lock => lock
+   write_cell_vector => cells
  );
 
 end architecture sim;

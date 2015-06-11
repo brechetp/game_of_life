@@ -26,15 +26,11 @@ entity cell_ctrl is
     READY_WRITING: out std_ulogic; -- the write_cell_vector is ready to be written in memory
     -- n state of the world, 3 rows at a time of width BUFFER_SIZE
     read_cell_vector: in CELL_VECTOR(0 to N_CELL-1); -- read cells from memory
-    last_cell: out CELL_VECTOR(0 to N_CELL-1); -- test cell current states
                                                                 -- we only need this one as our window is gliding
 
     -- n+1 state of the world to be written in memory
-    write_cell_vector:     out CELL_VECTOR(0 to N_CELL-3); -- cells to be written to memory
+    write_cell_vector:     out CELL_VECTOR(0 to N_CELL-3) -- cells to be written to memory
                                       -- this is the north register
-    -- lock: out std_ulogic
-    state_out : out CELL_CTRL_STATE;
-    window_out: out window
   );
 end entity cell_ctrl;
 
@@ -48,21 +44,8 @@ architecture arc of cell_ctrl is
 
 begin
 
-  -- lock <= new_data;
   --
-  state_out <= state;
-
-
-  process(cells)
-  begin
-    for i in 0 to N_CELL-1 loop
-      window_out(0, i) <= cells(0, i);
-      window_out(1, i) <= cells(1, i);
-      window_out(2, i) <= cells(2, i);
-    end loop;
-  end process;
-
-  state_process: process(clk)
+  state_process: process(clk) -- sets the cell_ctrl state
   begin
     if clk = '1' then
       if rstn = '0' then
@@ -73,7 +56,7 @@ begin
           when FREEZE => -- we wait for done signals during one CC
             if DONE_WRITING = '1' and DONE_READING = '1' then -- we can read and write to registers
               state <= NORMAL;
-              run <= '1';
+              run <= '1'; -- starts the write_cell_vector computation
             else
               if DONE_READING = '1' then -- to remember the DONE_READING signal
                 state <= READ;
@@ -90,14 +73,14 @@ begin
               run <= '1';
             end if;
 
-          when WRITE =>
+          when WRITE => -- DONE_WRITING has been read, wait for DONE_READING
             if DONE_READING = '1' then
               state <= NORMAL;
               run <= '1';
             end if;
 
           when NORMAL =>
-            run <= '0';
+            run <= '0'; -- prevent from overwriting the write_cell_vector
             state <= FREEZE; -- we have read and written memory, we wait for new DONE_READING and DONE_WRITING signals
 
         end case;
@@ -117,10 +100,9 @@ begin
         if state = NORMAL then -- we can't do anything unless the past generation has been written to memory
           for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
             cells(0,i) <= cells(1,i);
-            cells(1,i)  <= (read_cell_vector(i));
+            cells(1,i)  <= (read_cell_vector(i)); -- for the next computation
           end loop;
-          READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written), DONE_READING will be set to 0
-          -- new_data <= 'H'; -- we can trust the computation of the generation g
+          READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written)
         end if;
       end if; -- end of the reset block
     end if; -- end of the synchronous block
@@ -132,7 +114,7 @@ begin
     port map(
           clk   => clk,
           rstn => rstn,
-          run => run,
+          run => run, -- computes iif run is set
           N => cells(0, i),
           NW => cells(0, i+1),
           W => cells(1, i+1),
@@ -153,7 +135,7 @@ begin
         READY_WRITING <= '0';
       else
         READY_WRITING <= '0'; -- we set READY_WRITING to 0 unless we cache the new cells in the write_cell_vector
-        if state = NORMAL then -- checks if new data is to be output and if the old one has been written
+        if state = NORMAL then -- checks if DONE signals have been read
           READY_WRITING <= '1'; -- for addr_ctrl: the write_vector is valid
         end if;
       end if; -- end of the reset block
