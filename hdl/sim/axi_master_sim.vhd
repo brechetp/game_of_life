@@ -37,11 +37,12 @@ architecture sim of axi_master_sim is
   signal raddress:  std_ulogic_vector(31 downto 0) := "00110011001100110011001100110011";
   signal wsize:	    integer range 0 to 9 := 1;
   signal rsize:	    integer range 0 to 9 := 1;
-  signal wc_vector: cell_vector(0 to 79);
+  signal wc_vector: cell_vector(0 to 77);
   signal write_rq:  std_ulogic	:=  '0';
   signal read_rq:   std_ulogic  :=  '0';
   signal r_offset:  integer range 0 to 79 := 0;
   signal w_strobe:  std_ulogic_vector(7 downto 0);
+  signal w_strobe_last:std_ulogic_vector(7 downto 0);
   signal r_strobe:  std_ulogic_vector(7 downto 0);
 begin
 
@@ -120,7 +121,8 @@ begin
       rc_vector	=>  rc_vector,
       r_offset	=>  r_offset,
       w_strobe	=>  w_strobe,
-      r_strobe	=>  r_strobe
+      r_strobe	=>  r_strobe,
+      w_strobe_last => w_strobe_last
   );
 
 end architecture sim;

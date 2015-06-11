@@ -42,7 +42,7 @@ entity axi_register_master is
     rc_vector:	    out cell_vector(0 to 79);           --  cell array to be read from
     -- Write control signals
     waddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start writing
-    wc_vector:	    in  cell_vector(0 to 79);			--  cell array to be written in memory
+    wc_vector:	    in  cell_vector(0 to 77);			--  cell array to be written in memory
     wsize:	        in  integer range 0 to 15;		    --  size of writting burst
     w_strobe:	    in	std_ulogic_vector(7 downto 0);	--  Strobe for the first part of the burst
     w_strobe_last:  in  std_ulogic_vector(7 downto 0);  --  Strobe for the last part of the burst
@@ -135,7 +135,7 @@ begin
         m_axi_m2s.wvalid  <= '1'; --  Our write data is always valid 
         tmp               :=  0;
         for i in 0 to 7 loop
-          if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (tmp < 80) then	--  First burst call, will be written, not overflowing the cell_vector 
+          if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (tmp < 78) then	--  First burst call, will be written, not overflowing the cell_vector 
             m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(tmp));	--  Put the cell in a space that will be written
             tmp := tmp +1;                          							--  Assert that we've written another cell.
           end if;
@@ -166,7 +166,7 @@ begin
               write_word_cpt    := write_word_cpt + 1;--  We've send another part of the burst
               tmp               :=  0;
               for i in 0 to 7 loop
-                if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (write_cell_number + tmp < 80) then	--  First burst call, will be written, not overflowing the cell_vector 
+                if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (write_cell_number + tmp < 78) then	--  First burst call, will be written, not overflowing the cell_vector 
                   m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(write_cell_number + tmp));	--  Put the cell in a space that will be written
                   tmp := tmp +1;                          							--  Assert that we've written another cell.
                 end if;

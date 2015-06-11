@@ -34,7 +34,6 @@ entity addr_ctrl is
    port(
 	aclk:     in std_ulogic; -- Clock
 	aresetn:  in std_ulogic;  -- Reset
-        computation_start: in std_ulogic;
 	--------------------------------
 	-- AXI lite slave port s0_axi --
 	--------------------------------
@@ -135,6 +134,7 @@ end entity addr_ctrl;
 
 architecture window of addr_ctrl is
 
+  signal computation_start:         std_ulogic;
   signal s0_axi_m2s:		    axilite_gp_m2s;
   signal s0_axi_s2m:		    axilite_gp_s2m;
   signal m_axi_m2s:		    axi_hp_m2s;
@@ -172,14 +172,16 @@ architecture window of addr_ctrl is
 
 begin
 
-  i_axi_register: entity axi_register_lib.axi_register(rtl)
+  i_axi_register: entity axi_register_lib.axi_register_v1(rtl)
   port map(
     aclk      => aclk,
     aresetn   => aresetn,
-    s0_axi_m2s => s0_axi_m2s,
-    s0_axi_s2m => s0_axi_s2m,
-    gpi => gpi,
-    gpo => gpo
+    s_axi_m2s => s0_axi_m2s,
+    s_axi_s2m => s0_axi_s2m,
+    height    => height,
+    width     => width,
+    start     => global_start,
+    color     => color
   );
 
   i_axi_register_master: entity axi_register_lib.axi_register_master(rtl)
@@ -225,6 +227,7 @@ begin
     variable place_in_first_word:     unsigned(2 downto 0);   -- offset in the 64 bit space mapped by the address
     variable right_torus:             std_ulogic := '0';      -- logic test to check if we are with a right torus
     variable next_state:              ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
+    variable init:                    std_ulogic;
   begin
     if aclk = '1' then -- syncronous block
       if aresetn = '0' then -- reset
@@ -257,7 +260,7 @@ begin
           when PRELOAD =>
             -- PRELOAD state
             -- whenever j is at the border of the world, we fetch
-            if (ready_reading_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
+            if (ready_reading_cell_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
               init                    :=  '0';
               done_reading_cell_ctrl  <= '0'; -- the next cells are not valid
               read_line               := i;
@@ -362,9 +365,9 @@ begin
                 read_state <= R_WAIT;
               end if;
             end if;
-          when R_WAIT =>
-            if done_reading = '1'; then
-              read_state <= next_state;
+          when R_WAIT => -- we wait for the current query completion before moving on
+            if done_reading = '1' then
+              read_state <= next_state; -- we load the saved nex_state;
             end if;
         end case;
       end if;
@@ -419,11 +422,11 @@ begin
               address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
               place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
               if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
-                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)) -- Wsize <= (WORLD_WIDTH -1 -j)/8
+                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8
                 -- We don't want overflow on other addresses
               elsif place_in_first_word <= "001" then
                 wsize <= 8; -- we don't overflow on trailing 64-bit words
-              else  place_in_first_word > "001" then
+              elsif  place_in_first_word > "001" then
                 wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
               end if;
               for i in 0 to 7 loop
@@ -455,10 +458,8 @@ begin
               cpt := cpt + 1;            --  The next line to write will be cpt+1
               write_state <= W_START;
               -- TODO add test finished column, go to W_START and reset cpt
-              if ((write_line = WORLD_HEIGHT - 1) and (write_column + (N_CELL - 2) > WORLD_WIDTH)) then -- TODO See this conditionn again-- when we wrote the last line, we go to IDLE state waiting for another generation computation or we are asked to stop writing
+              if (write_line = WORLD_HEIGHT - 1) then
                 write_state <= W_IDLE;
-              elsif ((write_line = WORLD_HEIGHT - 1) then
-                write_state <=
               end if;
               done_writing_cell_ctrl <= '1'; --  Notify that the cells have been written in memory
             end if;

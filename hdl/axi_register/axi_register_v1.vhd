@@ -21,7 +21,7 @@ use axi_lib.axi_pkg.all;
 
 -- See the README file for a detailed description of the AXI register
 
-entity axi_register is
+entity axi_register_v1 is
   generic(na1: natural := 30;   -- Number of significant bits in S_AXI addresses (12 bits => 4kB address space)
           nr1: natural := 4);   -- Number of 32-bits registers in S_AXI address space; addresses are 0 to 4*(nr1-1)
   port(
@@ -36,9 +36,9 @@ entity axi_register is
     start:	   out std_ulogic;			-- Start signal for the simulation
     color:	   out std_ulogic_vector(31 downto 0) 	-- Color scale (grey scale)
   );
-end entity axi_register;
+end entity axi_register_v1;
 
-architecture rtl of axi_register is
+architecture rtl of axi_register_v1 is
 
   constant l2nr1: natural := log2_up(nr1); -- Log2 of nr1 (rounded towards infinity)
 
