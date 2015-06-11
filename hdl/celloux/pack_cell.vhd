@@ -9,7 +9,7 @@ package pack_cell is
   subtype COLOR is STD_ULOGIC_VECTOR(7 downto 0); -- the cell colors, in the same order as the cells. BLACK: 00000000, RED: 11100000, GREEN: 00011100, WHITE: 11111111 
   type COLOR_VECTOR is array(natural range <>) of COLOR;
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
-  subtype BIT_COUNT is std_ulogic_vector (1 downto 0); -- the number of neighbors in binary
+  subtype BIT_COUNT is std_ulogic_vector (1 downto 0); -- the number of neighbors in binary mod 4
 
   constant COLORS: COLOR_VECTOR(0 to 3) := (b"00000000", b"11100000", b"00011100", b"11111111");
   
@@ -70,7 +70,7 @@ package body pack_cell is
 
   function state2bit (s: cell_state) return std_ulogic is
   begin
-    return to_unsigned(CELL_STATE'POS(s), 2)(1);
+    return to_unsigned(CELL_STATE'POS(s), 2)(1); -- keep the MSB of the state
   end state2bit;
 
 -- csa adder implementation for cells

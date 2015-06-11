@@ -22,23 +22,16 @@
 #rnd: \
 #	global_lib.numeric_std \
 #	random_pkg
-.NOSYN: \
-        cell_sim \
-        ca_sim \
-        axi_master_sim \
-        cell_ctrl_sim
 
-cell_sim: \
+addr_ctrl_pkg: \ 
+        global_lib.numeric_std \
+        global_lib.utils \
+        main_lib.main_pkg
+addr_ctrl: \
+        global_lib.numeric_std \
+        global_lib.utils \
+        axi_lib.axi_pkg \
+        axi_register_lib.axi_register \
+        addr_ctrl_pkg \
         celloux_lib.pack_cell \
         celloux_lib.cell
-
-cell_ctrl_sim: \
-        celloux_lib.pack_cell \
-        celloux_lib.cell \
-        main_lib.main_pkg \
-        main_lib.cell_ctrl
-      
-axi_master_sim: \
-        celloux_lib.pack_cell \
-        axi_register_lib.axi_register_master \
-        axi_lib.axi_pkg
