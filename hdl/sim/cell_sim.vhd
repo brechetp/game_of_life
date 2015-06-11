@@ -1,10 +1,11 @@
 -- file cell_sim.vhd
 --
 library ieee;
-use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
+library global_lib;
+use global_lib.numeric_std.all;
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
 
 -- the entity of a simulation environment usually has no input output ports.
 -- file cell_sim_arc.vhd

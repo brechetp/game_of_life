@@ -23,5 +23,7 @@
 #	global_lib.numeric_std \
 #	random_pkg
 
+cell_pkg: \
+        global_lib
 cell: \
-        pack_cell
+        cell_pkg

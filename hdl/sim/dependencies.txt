@@ -29,16 +29,18 @@
         cell_ctrl_sim
 
 cell_sim: \
-        celloux_lib.pack_cell \
+        global_lib.numeric_std \
+        celloux_lib.cell_pkg \
         celloux_lib.cell
 
 cell_ctrl_sim: \
-        celloux_lib.pack_cell \
+        celloux_lib.cell_pkg \
         celloux_lib.cell \
-        main_lib.main_pkg \
-        main_lib.cell_ctrl
+        cell_controller_lib.cell_ctrl_pkg \
+        cell_controller_lib.cell_ctrl \
+        global_lib.numeric_std
       
 axi_master_sim: \
-        celloux_lib.pack_cell \
+        celloux_lib.cell_pkg \
         axi_register_lib.axi_register_master \
         axi_lib.axi_pkg

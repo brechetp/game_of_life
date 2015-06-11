@@ -2,11 +2,12 @@
 --
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+library global_lib;
+use global.numeric_std.all;
 library celloux_lib;
-use celloux_lib.pack_cell.all;
-library main_lib;
-use main_lib.main_pkg.all;
+use celloux_lib.cell_pkg.all;
+library cell_controller_lib;
+use cell_controller_lib.cell_ctrl_pkg.all;
 
 entity cell_ctrl_sim is
   port(cells : out CELL_VECTOR(0 to N_CELL-3);
@@ -90,7 +91,7 @@ begin
 
   -- we instanciate the entity cell_ctrl, arc.
   --
- i_cell_ctrl: entity main_lib.cell_ctrl(arc)
+ i_cell_ctrl: entity cell_controller_lib.cell_ctrl(arc)
  port map
  (
    clk => clk,

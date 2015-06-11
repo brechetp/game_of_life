@@ -1,6 +1,6 @@
 -- file cell_sim.vhd
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
 
 library axi_lib;
 use axi_lib.axi_pkg.all;

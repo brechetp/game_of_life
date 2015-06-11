@@ -20,7 +20,7 @@ library axi_lib;
 use axi_lib.axi_pkg.all;
 
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
 
 -- See the README file for a detailed description of the AXI register master
 

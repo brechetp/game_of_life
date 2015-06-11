@@ -26,7 +26,7 @@
 addr_ctrl_pkg: \ 
         global_lib.numeric_std \
         global_lib.utils \
-        main_lib.main_pkg
+        cell_controller_lib.cell_ctrl_pkg
 addr_ctrl: \
         global_lib.numeric_std \
         global_lib.utils \
@@ -34,6 +34,6 @@ addr_ctrl: \
         axi_register_lib.axi_register_v1 \
         axi_register_lib.axi_register_master \
         addr_ctrl_pkg \
-        celloux_lib.pack_cell \
+        celloux_lib.cell_pkg \
         celloux_lib.cell \
-        main_lib.cell_ctrl
+        cell_controller_lib.cell_ctrl
