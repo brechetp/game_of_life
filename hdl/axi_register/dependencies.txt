@@ -58,3 +58,8 @@ axi_register_v1: \
 	global_lib.numeric_std \
 	global_lib.utils \
 	axi_lib.axi_pkg
+axi_register_master: \
+	global_lib.numeric_std \
+	global_lib.utils \
+	axi_lib.axi_pkg \
+    celloux_lib.pack_cell

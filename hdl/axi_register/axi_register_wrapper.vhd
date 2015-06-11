@@ -145,8 +145,8 @@ entity axi_register_wrapper is
     m_axi_awvalid: out std_logic;
     -- Write data channel
     m_axi_wid:     out std_logic_vector(5 downto 0);
-    m_axi_wdata:   out std_logic_vector(31 downto 0);
-    m_axi_wstrb:   out std_logic_vector(3 downto 0);
+    m_axi_wdata:   out std_logic_vector(63 downto 0);
+    m_axi_wstrb:   out std_logic_vector(7 downto 0);
     m_axi_wlast:   out std_logic;
     m_axi_wvalid:  out std_logic;
     -- Write response channel
@@ -158,7 +158,7 @@ entity axi_register_wrapper is
     m_axi_arready: in  std_logic;
     -- Read data channel
     m_axi_rid:     in  std_logic_vector(5 downto 0);
-    m_axi_rdata:   in  std_logic_vector(31 downto 0);
+    m_axi_rdata:   in  std_logic_vector(63 downto 0);
     m_axi_rresp:   in  std_logic_vector(1 downto 0);
     m_axi_rlast:   in  std_logic;
     m_axi_rvalid:  in  std_logic;
@@ -183,8 +183,8 @@ architecture rtl of axi_register_wrapper is
     signal s0_axi_s2m: axilite_gp_s2m;
     signal s1_axi_m2s: axi_gp_m2s;
     signal s1_axi_s2m: axi_gp_s2m;
-    signal m_axi_m2s: axi_gp_m2s;
-    signal m_axi_s2m: axi_gp_s2m;
+    signal m_axi_m2s: axi_hp_m2s;
+    signal m_axi_s2m: axi_hp_s2m;
     signal gpi_local: std_ulogic_vector(7 downto 0);
     signal gpo_local: std_ulogic_vector(7 downto 0);
 

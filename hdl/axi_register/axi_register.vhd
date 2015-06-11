@@ -33,8 +33,8 @@ entity axi_register is
     s1_axi_m2s: in  axi_gp_m2s;
     s1_axi_s2m: out axi_gp_s2m;
     -- AXI master port
-    m_axi_m2s:  out axi_gp_m2s;
-    m_axi_s2m:  in  axi_gp_s2m;
+    m_axi_m2s:  out axi_hp_m2s;
+    m_axi_s2m:  in  axi_hp_s2m;
     -- GPIO
     gpi:        in  std_ulogic_vector(7 downto 0);
     gpo:        out std_ulogic_vector(7 downto 0)
@@ -56,14 +56,7 @@ architecture rtl of axi_register is
 
 begin
 
-  s1_axi_to_m_axi: process(s1_axi_m2s, m_axi_s2m)
-
-  begin
-    m_axi_m2s <= s1_axi_m2s;
-    m_axi_m2s.araddr(31 downto 30) <= "00";
-    m_axi_m2s.awaddr(31 downto 30) <= "00";
-    s1_axi_s2m <= m_axi_s2m; 
-  end process s1_axi_to_m_axi;
+  m_axi_m2s <= (arvalid | rready | awvalid | wlast | wvalid | bready => '0', others => (others => '0'));
 
   regs_pr: process(aclk)
     -- idle: waiting for AXI master requests: when receiving write address and data valid (higher priority than read), perform the write, assert write address
