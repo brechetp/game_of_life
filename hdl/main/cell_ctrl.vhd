@@ -84,6 +84,7 @@ begin
   begin
     if clk = '1' then
       if rstn = '0' then
+        -- Could probably do cell <= (others => (others => DEAD));
         for i in 0 to N_CELL-1 loop
           cells(0, i) <= DEAD;
           cells(1, i) <= DEAD;

@@ -13,7 +13,7 @@ use main_lib.main_pkg.all;
 package addr_ctrl_pkg is 
 
   type ADDR_CTRL_READ_STATE is (IDLE, START_LINE, INLINE, PRELOAD, POSTLOAD); -- the read state
-  type ADDR_CTRL_WRITE_STATE is (W_IDLE, W_START); -- the write state (W_IDLE when waiting for a new generation to compute)
+  type ADDR_CTRL_WRITE_STATE is (W_IDLE, W_START, W_WAIT); -- the write state (W_IDLE when waiting for a new generation to compute)
 
   constant W_BASE_ADDRESS: unsigned := X"0123456789abcdef";
   constant R_BASE_ADDRESS: unsigned := X"0123456789abcdef";
