@@ -29,9 +29,10 @@ entity cell_ctrl is
                                                                 -- we only need this one as our window is gliding
 
     -- n+1 state of the world to be written in memory
-    write_cell_vector:     out CELL_VECTOR(0 to N_CELL-3) -- cells to be written to memory
+    write_cell_vector:     out CELL_VECTOR(0 to N_CELL-3); -- cells to be written to memory
                                       -- this is the north register
     -- lock: out std_ulogic
+    state_out : out CELL_CTRL_STATE
   );
 end entity cell_ctrl;
 
@@ -45,6 +46,8 @@ architecture arc of cell_ctrl is
 begin
 
   -- lock <= new_data;
+  --
+  state_out <= state;
 
   state_process: process(clk)
   begin
@@ -52,80 +55,49 @@ begin
       if rstn = '0' then
         state <= FREEZE;
       else
-        case state is
-          when FREEZE =>
-            if DONE_WRITING = '1' and DONE_READING = '1' then
-              state <= NORMAL;
+        case state is -- we remember the seen signals. We only reset to freeze when we have READY_WRITING set
+
+          when FREEZE => -- we wait for done signals during one CC
+            if DONE_WRITING = '1' and DONE_READING = '1' then -- we can read and write to registers
+              state <= NORMAL; -- 
             else
-              if DONE_WRITING = '1' then
-                state <= WRITE;
+              if DONE_READING = '1' then -- to remember the DONE_READING signal
+                state <= READ;
               else
-                if DONE_READING = '1' then
-                  state <= READ;
+                if DONE_WRITING = '1' then -- to remember the DONE_WRITING signal
+                  state <= WRITE;
                 end if;
               end if;
             end if;
 
-          when READ =>
-            if DONE_READING = '0' then
-              if DONE_WRITING = '1' then
-                state <= WRITE;
-              else
-                state <= FREEZE;
-              end if;
-            else -- DONE_READING = '0'
-              if DONE_WRITING = '1' then
-                state <= NORMAL;
-              end if;
+          when READ => -- we remember the DONE_READING signal
+            if DONE_WRITING = '1' then
+              state <= NORMAL;
             end if;
 
           when WRITE =>
-            if DONE_WRITING = '0' then
-              if DONE_READING = '1' then
-                state <= READ;
-              else
-                state <= FREEZE;
-              end if;
-            else
-              if DONE_READING = '1' then
-                state <= NORMAL;
-              end if;
+            if DONE_READING = '1' then
+              state <= NORMAL;
             end if;
 
-          when NORMAL => 
-            if done_writing = '0' then
-              if done_reading = '0' then
-                state <= FREEZE;
-              else
-                state <= READ;
-              end if;
-            else
-              if done_reading = '0' then
-                state <= WRITE;
-              end if;
-            end if;
+          when NORMAL =>
+            state <= FREEZE; -- we have read and written memory, we wait for new DONE_READING and DONE_WRITING signals
+            
         end case;
       end if;
     end if;
-  end process state_process;
-
-            
-
+  end process;
   
   input: process(clk)
   begin
     if clk = '1' then
       if rstn = '0' then
-        for i in 0 to N_CELL-1 loop
-          cells(0, i) <= DEAD;
-          cells(1, i) <= DEAD;
-          cells(2, i) <= DEAD;
-        end loop;
+        cells <= ( others => (others => DEAD));
         READY_READING <= '0';
         -- new_data <= 'L';
       else
         READY_READING <= '0'; -- unless we say so, the memory is not ready to be overwritten
-        if (state = READ) or (state = NORMAL) then -- we can't do anything unless the past generation has been written to memory
+        if (state = NORMAL) then -- we can't do anything unless the past generation has been written to memory
           for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
             cells(0,i) <= cells(1,i);
             cells(1,i) <= cells(2,i);
@@ -148,18 +120,15 @@ begin
   begin
     if clk = '1' then
       if rstn = '0' then
-        for i in 0 to N_CELL-3 loop
-          write_cell_vector(i) <= DEAD;
-        end loop;
+        write_cell_vector <= (others => DEAD);
         READY_WRITING <= '0';
       else
         READY_WRITING <= '0'; -- we set READY_WRITING to 0 unless we cache the new cells in the write_cell_vector
-        if (state = WRITE or state = NORMAL) then -- checks if new data is to be output and if the old one has been written
+        if (state = NORMAL) then -- checks if new data is to be output and if the old one has been written
           for i in 0 to ( N_CELL-3 ) loop
             write_cell_vector(i) <= new_cells(i); -- output the soon-to-be-written cells
           end loop;
-          READY_WRITING <= '1'; -- the DONE_WRITING will be set to 0 by address controller ?
-          -- new_data <= 'L'; -- resolved type
+          READY_WRITING <= '1'; -- for addr_ctrl: the write_vector is valid
         end if;
       end if; -- end of the reset block
     end if;-- end of the syncronous block
