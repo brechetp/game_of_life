@@ -42,3 +42,8 @@ axi_master_sim: \
         celloux_lib.pack_cell \
         axi_register_lib.axi_register_master \
         axi_lib.axi_pkg
+axi_register_sim: \
+	global_lib.numeric_std \
+	global_lib.utils \
+	axi_lib.axi_pkg \
+	axi_register_lib.axi_register_v1
