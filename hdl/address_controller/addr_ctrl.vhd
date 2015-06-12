@@ -19,9 +19,6 @@ use global_lib.utils.all;
 
 use WORK.addr_ctrl_pkg.all;
 
-library cell_controller_lib;
-use cell_controller_lib.cell_ctrl_pkg.all;
-
 library celloux_lib;
 use celloux_lib.cell_pkg.all;
 
@@ -31,7 +28,7 @@ use axi_lib.axi_pkg.all;
 library axi_register_lib;
 
 entity addr_ctrl is
-   port(
+   port( 
 	aclk:     in std_ulogic; -- Clock
 	aresetn:  in std_ulogic;  -- Reset
 	--------------------------------
@@ -232,7 +229,7 @@ begin
   -- TESTING --
   testing_rc_vector <= read_cell_vector;
   testing_wc_vector <= write_cell_vector;
-
+ 
   read_process: process(aclk)
     variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
     variable read_line:               NATURAL;                -- local copies of i,

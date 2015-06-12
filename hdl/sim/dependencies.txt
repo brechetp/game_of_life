@@ -45,6 +45,13 @@ axi_master_sim: \
         axi_register_lib.axi_register_master \
         axi_lib.axi_pkg
 
+axi_register_sim: \
+	global_lib.numeric_std \
+	global_lib.utils \
+	axi_lib.axi_pkg \
+	axi_register_lib.axi_register_v1
+
+
 addr_ctrl_sim: \
         address_controller_lib.addr_ctrl_pkg \
         global_lib.numeric_std \
@@ -54,4 +61,3 @@ addr_ctrl_sim: \
         cell_controller_lib.cell_ctrl_pkg
 
 
-          

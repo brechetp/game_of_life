@@ -25,5 +25,6 @@
 
 cell_pkg: \
         global_lib.numeric_std
+
 cell: \
         cell_pkg

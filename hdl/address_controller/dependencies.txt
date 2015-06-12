@@ -24,9 +24,8 @@
 #	random_pkg
 
 addr_ctrl_pkg: \ 
-        global_lib.numeric_std \
-        global_lib.utils \
-        cell_controller_lib.cell_ctrl_pkg
+        global_lib.numeric_std
+
 addr_ctrl: \
         global_lib.numeric_std \
         global_lib.utils \

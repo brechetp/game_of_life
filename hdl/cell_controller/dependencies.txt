@@ -25,8 +25,11 @@
 
 cell_ctrl_pkg: \ 
         celloux_lib.cell_pkg \
-        celloux_lib.cell
+        celloux_lib.cell \
+        address_controller_lib.addr_ctrl_pkg
+
 cell_ctrl: \
         cell_ctrl_pkg \
         celloux_lib.cell_pkg \
+        address_controller_lib.addr_ctrl_pkg \
         celloux_lib.cell
