@@ -220,8 +220,8 @@ begin
     ready_reading   => ready_reading_cell_ctrl
   );
         
-  WORLD_HEIGHT <= to_integer(height); -- convert the world dimensions
-  WORLD_WIDTH <= to_integer(width);
+  WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
+  WORLD_WIDTH <= to_integer(unsigned(width));
 
   read_process: process(aclk)
     variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
@@ -238,7 +238,7 @@ begin
       if aresetn = '0' then -- reset
         i <= WORLD_HEIGHT - 1;-- Game height - 1, size in cells not bits ( 1 cell = 8 bits)
         j <= 0; -- up left corner
-        read_state <= idle;
+        read_state <= r_idle;
         first_time := '1';
       else -- no reset
         read_request <= '0'; -- default values
@@ -382,13 +382,13 @@ begin
 
   write_process: process(aclk)
     variable address_to_write:      unsigned(31 downto 0); -- where to write address in memory
-    variable write_line:            integer range 0 to WORLD_HEIGHT-1; -- write line index
-    variable write_column:          integer range 0 to WORLD_WIDTH-1; -- write column index
+    variable write_line:            integer range 0 to WORLD_HEIGHT_MAX-1; -- write line index
+    variable write_column:          integer range 0 to WORLD_WIDTH_MAX-1; -- write column index
     variable offset_first_to_write: unsigned(31 downto 0); -- offset in the waddress
     variable place_in_first_word:   unsigned(2 downto 0); -- word offset
     variable offset_last_to_write:  unsigned(31 downto 0); 
     variable place_in_last_word:    unsigned(2 downto 0); 
-    variable cpt:                   integer range -2 to WORLD_HEIGHT; -- cpt that keep the current line to be written. Is valid when positive
+    variable cpt:                   integer range -2 to WORLD_HEIGHT_MAX; -- cpt that keep the current line to be written. Is valid when positive
   begin
     if aclk = '1' then
       if aresetn = '0' then

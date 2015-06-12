@@ -44,3 +44,11 @@ axi_master_sim: \
         celloux_lib.cell_pkg \
         axi_register_lib.axi_register_master \
         axi_lib.axi_pkg
+
+addr_ctrl_sim: \
+        address_controller_lib.addr_ctrl_pkg \
+        cell_controller_lib.cell_ctrl_pkg \
+        global_lib.numeric_std \
+        celloux_lib.cell_pkg
+
+          

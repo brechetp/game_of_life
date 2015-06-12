@@ -1,6 +1,6 @@
 library ieee;
 library global_lib;
-use global.numeric_std.all;
+use global_lib.numeric_std.all;
 use ieee.std_logic_1164.all;
 
 package cell_pkg is
