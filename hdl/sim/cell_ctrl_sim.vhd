@@ -3,7 +3,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 library global_lib;
-use global.numeric_std.all;
+use global_lib.numeric_std.all;
 library celloux_lib;
 use celloux_lib.cell_pkg.all;
 library cell_controller_lib;

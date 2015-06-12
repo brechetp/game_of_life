@@ -24,6 +24,6 @@
 #	random_pkg
 
 cell_pkg: \
-        global_lib
+        global_lib.numeric_std
 cell: \
         cell_pkg
