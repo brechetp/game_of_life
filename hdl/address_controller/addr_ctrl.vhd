@@ -235,8 +235,11 @@ begin
         computation_start <= '0';
         if count = 100000 then
           computation_start <= '1';
+        elsif count > 100000 then -- TESTING Will only raise it once
+          count := 100001;
         elsif count = 200000 then
           computation_start <= '1';
+          count := 0;
         end if;
       end if; 
     end if;
