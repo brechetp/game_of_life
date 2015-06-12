@@ -14,7 +14,8 @@ entity axi_register_sim is
   port(
 	start: out std_ulogic;
 	height,width: out std_ulogic_vector(15 downto 0);
-	color: out std_ulogic_vector(31 downto 0)
+	color: out std_ulogic_vector(31 downto 0);
+	widthx: out natural range 0 to 3
   );
 end entity axi_register_sim;
 
@@ -47,7 +48,6 @@ architecture sim of axi_register_sim is
       begin
         if aresetn = '0' then
 	  cpt := 0;
-          s_axi_s2m <= (rdata => (others => '0'), rresp => axi_resp_okay, bresp => axi_resp_okay, others => '0');
 	elsif aclk = '1' then
           cpt := cpt +1;
 	  s_axi_m2s.awvalid <= '0';
@@ -61,22 +61,22 @@ architecture sim of axi_register_sim is
 	  elsif cpt = 10 then
 	    s_axi_m2s.awvalid <= '1';
 	    s_axi_m2s.wvalid <= '1';
-	    s_axi_m2s.awaddr <= "00000000000000000000000000000001";
+	    s_axi_m2s.awaddr <= "00000000000000000000000000000100";
 	    s_axi_m2s.wdata <= "00000000000000000000000000001001";
 	  elsif cpt = 15 then
 	    s_axi_m2s.awvalid <= '1';
 	    s_axi_m2s.wvalid <= '1';
-	    s_axi_m2s.awaddr <= "00000000000000000000000000000011";
+	    s_axi_m2s.awaddr <= "00000000000000000000000000001100";
 	    s_axi_m2s.wdata <= "00000000011000000000110000000011";
 	  elsif cpt = 20 then
 	    s_axi_m2s.awvalid <= '1';
 	    s_axi_m2s.wvalid <= '1';
-	    s_axi_m2s.awaddr <= "00000000000000000000000000000010";
+	    s_axi_m2s.awaddr <= "00000000000000000000000000001000";
 	    s_axi_m2s.wdata <= "00000000011000000000110000000011";
 	  elsif cpt = 25 then
 	    s_axi_m2s.awvalid <= '1';
 	    s_axi_m2s.wvalid <= '1';
-	    s_axi_m2s.awaddr <= "00000000000000000000000000000011";
+	    s_axi_m2s.awaddr <= "00000000000000000000000000001100";
 	    s_axi_m2s.wdata <= "00000000011000000000110000000011";
 	  end if;
 	  if cpt = 40 then
@@ -89,13 +89,13 @@ architecture sim of axi_register_sim is
   port map(
 	aclk => aclk,
 	aresetn => aresetn,
-	start => start,
 	height => height,
 	width => width,
 	start => start,
 	color => color,
 	s_axi_m2s => s_axi_m2s,
-	s_axi_s2m => s_axi_s2m
+	s_axi_s2m => s_axi_s2m,
+	widthx => widthx
   );
 
 end architecture sim;

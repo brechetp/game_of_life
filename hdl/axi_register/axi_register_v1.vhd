@@ -34,7 +34,8 @@ entity axi_register_v1 is
     height:        out std_ulogic_vector(15 downto 0); 	-- Height of the field
     width:         out std_ulogic_vector(15 downto 0); 	-- Width of the field
     start:	   out std_ulogic;			-- Start signal for the simulation
-    color:	   out std_ulogic_vector(31 downto 0) 	-- Color scale (grey scale)
+    color:	   out std_ulogic_vector(31 downto 0); 	-- Color scale (grey scale)
+    widthx:	   out natural range 0 to 3
   );
 end entity axi_register_v1;
 
@@ -45,7 +46,6 @@ architecture rtl of axi_register_v1 is
   constant gpir_idx: natural range 0 to nr1 - 1 := 0;
   constant gpor_idx: natural range 0 to nr1 - 1 := 1;
 
-  constant roreg: std_ulogic_vector(0 to nr1 - 1) := "10";
 
   subtype reg_type is std_ulogic_vector(31 downto 0);
   type reg_array is array(0 to nr1 - 1) of reg_type;
@@ -82,7 +82,7 @@ begin
         -- Addresses ranges
         widx := to_integer(unsigned(s_axi_m2s.awaddr(l2nr1 + 1 downto 2)));
         ridx := to_integer(unsigned(s_axi_m2s.araddr(l2nr1 + 1 downto 2)));
-
+	widthx <= widx;
         -- S_AXI write and read
         case state is
           when idle =>
