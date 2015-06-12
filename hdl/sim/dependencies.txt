@@ -47,8 +47,11 @@ axi_master_sim: \
 
 addr_ctrl_sim: \
         address_controller_lib.addr_ctrl_pkg \
-        cell_controller_lib.cell_ctrl_pkg \
         global_lib.numeric_std \
-        celloux_lib.cell_pkg
+        global_lib.utils \ 
+        axi_lib.axi_pkg \
+        address_controller_lib.addr_ctrl_pkg \
+        cell_controller_lib.cell_ctrl_pkg
+
 
           

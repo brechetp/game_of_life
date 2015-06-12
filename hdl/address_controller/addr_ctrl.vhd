@@ -128,7 +128,13 @@ entity addr_ctrl is
 	-- Write response channel
 	m_axi_bvalid:  in  std_logic;
 	m_axi_bid:     in  std_logic_vector(5 downto 0);
-	m_axi_bresp:   in  std_logic_vector(1 downto 0)
+	m_axi_bresp:   in  std_logic_vector(1 downto 0);
+         
+        -- TESTING --
+        --
+        testing_rc_vector: out cell_vector(0 to N_CELL-1);
+        testing_wc_vector: out cell_vector(0 to N_CELL-3)
+        
  );
 end entity addr_ctrl;
 
@@ -222,6 +228,10 @@ begin
         
   WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
   WORLD_WIDTH <= to_integer(unsigned(width));
+
+  -- TESTING --
+  testing_rc_vector <= read_cell_vector;
+  testing_wc_vector <= write_cell_vector;
 
   read_process: process(aclk)
     variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
