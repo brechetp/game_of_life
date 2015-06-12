@@ -223,6 +223,25 @@ begin
   WORLD_HEIGHT <= to_integer(height); -- convert the world dimensions
   WORLD_WIDTH <= to_integer(width);
 
+  computation_clock: process(aclk)
+
+  variable count:     INTEGER range 0 to 200000;
+  begin
+    if aclk = '1' then
+      if aresetn = '0' then -- reset
+        count := 0;
+      elsif global_start = '1' then
+        count = count +1;
+        computation_start <= '0';
+        if count = 100000 then
+          computation_start <= '1';
+        elsif count = 200000 then
+          computation_start <= '1';
+        end if;
+      end if; 
+    end if;
+  end process;
+
   read_process: process(aclk)
     variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
     variable read_line:               NATURAL;                -- local copies of i,
