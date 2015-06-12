@@ -132,7 +132,9 @@ entity addr_ctrl is
         -- TESTING --
         --
         testing_rc_vector: out cell_vector(0 to N_CELL-1);
-        testing_wc_vector: out cell_vector(0 to N_CELL-3)
+        testing_wc_vector: out cell_vector(0 to N_CELL-3);
+        testing_height: out integer;
+        testing_width: out integer
         
  );
 end entity addr_ctrl;
@@ -153,8 +155,8 @@ architecture window of addr_ctrl is
   signal color:			    std_ulogic_vector(31 downto 0);
   signal waddress:		    std_ulogic_vector(31 downto 0);
   signal raddress:		    std_ulogic_vector(31 downto 0);
-  signal wsize:			    integer;
-  signal rsize:			    integer;
+  signal wsize:			    integer range 0 to 15; -- the number of 64-bit words to write - 1
+  signal rsize:			    integer range 0 to 15;
   signal ready_writing:		    std_ulogic;
   signal read_request:		    std_ulogic;
   signal write_request:		    std_ulogic;
@@ -166,16 +168,16 @@ architecture window of addr_ctrl is
   signal done_writing_cell_ctrl:    std_ulogic;
   signal ready_reading_cell_ctrl:   std_ulogic;
   signal ready_writing_cell_ctrl:   std_ulogic;
-  signal read_state:		    ADDR_CTRL_READ_STATE;
-  signal write_state:		    ADDR_CTRL_WRITE_STATE;
+  signal read_state:		    ADDR_CTRL_READ_STATE := R_IDLE;
+  signal write_state:		    ADDR_CTRL_WRITE_STATE := W_IDLE;
   signal read_strobe:		    std_ulogic_vector(0 to 7); -- to remember where to read the first cell
   signal write_strobe:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal write_strobe_last:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal read_offset:		    integer range 0 to 79; -- tell how many cells have been written to memory
-  signal i:			    NATURAL range 0 to WORLD_HEIGHT_MAX; -- line index
-  signal j:			    NATURAL range 0 to WORLD_WIDTH_MAX; -- column index
-  signal WORLD_HEIGHT: NATURAL range 0 to WORLD_HEIGHT_MAX;
-  signal WORLD_WIDTH: NATURAL range 0 to WORLD_WIDTH_MAX;
+  signal i:			    integer range -1 to WORLD_HEIGHT_MAX; -- line index
+  signal j:			    integer range -1 to WORLD_WIDTH_MAX; -- column index
+  signal WORLD_HEIGHT: natural range 0 to WORLD_HEIGHT_MAX := WORLD_HEIGHT_MAX;
+  signal WORLD_WIDTH: natural range 0 to WORLD_WIDTH_MAX := WORLD_WIDTH_MAX;
 
 begin
 
@@ -227,6 +229,8 @@ begin
         
   WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
   WORLD_WIDTH <= to_integer(unsigned(width));
+  testing_height <= to_integer(unsigned(height));
+  testing_width <= to_integer(unsigned(width));
 
   -- TESTING --
   testing_rc_vector <= read_cell_vector;
@@ -245,7 +249,6 @@ begin
   begin
     if aclk = '1' then -- syncronous block
       if aresetn = '0' then -- reset
-        i <= WORLD_HEIGHT - 1;-- Game height - 1, size in cells not bits ( 1 cell = 8 bits)
         j <= 0; -- up left corner
         read_state <= r_idle;
         first_time := '1';
@@ -436,7 +439,7 @@ begin
               address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
               place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
               if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
-                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8
+                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
                 -- We don't want overflow on other addresses
               elsif place_in_first_word <= "001" then
                 wsize <= 8; -- we don't overflow on trailing 64-bit words

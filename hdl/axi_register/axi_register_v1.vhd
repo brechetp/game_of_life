@@ -68,15 +68,15 @@ begin
     variable wok, rok: boolean;                           -- Write (read) address mapped
     variable widx, ridx: natural range 0 to 2**l2nr1 - 1; -- Write (read) register index
   begin
-    height <= height_loc; -- Default height is 1280
-    width <=  width_loc; -- Default width is 1280
-    start <= start_loc; -- No start signal at the beginning
-    color <= color_loc; -- The color scale needs to be set
     if rising_edge(aclk) then
       if aresetn = '0' then
         regs <= (others => (others => '0'));
         s_axi_s2m <= (rdata => (others => '0'), rresp => axi_resp_okay, bresp => axi_resp_okay, others => '0');
         state := idle;
+        height <= height_loc; -- Default height is 1280
+        width <=  width_loc; -- Default width is 1280
+        start <= start_loc; -- No start signal at the beginning
+        color <= color_loc; -- The color scale needs to be set
       else
 
         -- Addresses ranges
