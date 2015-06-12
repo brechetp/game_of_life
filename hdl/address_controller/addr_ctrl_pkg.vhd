@@ -6,8 +6,6 @@ use ieee.std_logic_1164.all;
 library global_lib;
 use global_lib.numeric_std.all;
 
-library cell_controller_lib;
-use cell_controller_lib.cell_ctrl_pkg.all;
 
 
 package addr_ctrl_pkg is 
@@ -17,8 +15,11 @@ package addr_ctrl_pkg is
 
   constant W_BASE_ADDRESS: unsigned := X"0123456789abcdef";
   constant R_BASE_ADDRESS: unsigned := X"0123456789abcdef";
+  constant WORLD_WIDTH_MAX: natural := 1920; -- world maximum dimensions
+  constant WORLD_HEIGHT_MAX: natural := 1600;
+  constant N_CELL: POSITIVE := 80; -- the number of cells read per row
 
-  function coordinates2offset(current_line, column, width: natural) return unsigned;
+  function coordinates2offset(current_line, column, width: natural) return unsigned; -- returns the offset of the cell in the world
 
 
 end package addr_ctrl_pkg;

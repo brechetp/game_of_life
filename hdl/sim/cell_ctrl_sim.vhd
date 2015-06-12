@@ -8,6 +8,8 @@ library celloux_lib;
 use celloux_lib.cell_pkg.all;
 library cell_controller_lib;
 use cell_controller_lib.cell_ctrl_pkg.all;
+library address_controller_lib;
+use address_controller_lib.addr_ctrl_pkg.all;
 
 entity cell_ctrl_sim is
   port(cells : out CELL_VECTOR(0 to N_CELL-3);

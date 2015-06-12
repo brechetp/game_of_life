@@ -19,11 +19,10 @@ use global_lib.utils.all;
 
 use WORK.addr_ctrl_pkg.all;
 
-library cell_controller_lib;
-use cell_controller_lib.cell_ctrl_pkg.all;
-
 library celloux_lib;
 use celloux_lib.cell_pkg.all;
+
+library cell_controller_lib;
 
 library axi_lib;
 use axi_lib.axi_pkg.all;
