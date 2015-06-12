@@ -33,22 +33,22 @@ entity axi_register_master is
     m_axi_s2m:  in  axi_hp_s2m;
     -- Read control signals 
     raddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start reading
-    rsize:	    in  integer range 0 to 15;		        --  size of reading burst
+    rsize:	      in  integer range 0 to 15;		      --  size of reading burst
     r_strobe:	    in  std_ulogic_vector(7 downto 0);  --  Which part of the first 64 bit to read into rc_vector
-    read_rq :	    in  std_ulogic;			            --  request new read
-    r_offset:	    in	integer range 0 to 79;		    --  offset from which to write in rc_vector
+    read_rq :	    in  std_ulogic;			                --  request new read
+    r_offset:	    in	integer range 0 to 79;		      --  offset from which to write in rc_vector
     -- Read response signals
-    done_reading:   out std_ulogic;                     --  Read finished
-    rc_vector:	    out cell_vector(0 to 79);           --  cell array to be read from
+    done_reading: out std_ulogic;                     --  Read finished
+    rc_vector:	  out cell_vector(0 to 79);           --  cell array to be read from
     -- Write control signals
     waddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start writing
-    wc_vector:	    in  cell_vector(0 to 77);			--  cell array to be written in memory
-    wsize:	        in  integer range 0 to 15;		    --  size of writting burst
+    wc_vector:	  in  cell_vector(0 to 77);			      --  cell array to be written in memory
+    wsize:	      in  integer range 0 to 15;		      --  size of writting burst
     w_strobe:	    in	std_ulogic_vector(7 downto 0);	--  Strobe for the first part of the burst
-    w_strobe_last:  in  std_ulogic_vector(7 downto 0);  --  Strobe for the last part of the burst
-    write_rq:	    in  std_ulogic;			            --  Input data is valid - request new write
+    w_strobe_last:in  std_ulogic_vector(7 downto 0);  --  Strobe for the last part of the burst
+    write_rq:	    in  std_ulogic;			                --  Input data is valid - request new write
     -- Write response signals
-    done_writing:   out std_ulogic                      --  Write succesfull, ready for another
+    done_writing:   out std_ulogic                    --  Write succesfull, ready for another
   );
 end axi_register_master;
 
