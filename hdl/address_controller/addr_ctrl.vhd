@@ -231,7 +231,7 @@ begin
       if aresetn = '0' then -- reset
         count := 0;
       elsif global_start = '1' then
-        count = count +1;
+        count := count +1;
         computation_start <= '0';
         if count = 100000 then
           computation_start <= '1';
