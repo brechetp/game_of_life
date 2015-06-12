@@ -19,11 +19,10 @@ use global_lib.utils.all;
 
 use WORK.addr_ctrl_pkg.all;
 
-library main_lib;
-use main_lib.main_pkg.all;
-
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
+
+library cell_controller_lib;
 
 library axi_lib;
 use axi_lib.axi_pkg.all;
@@ -34,7 +33,6 @@ entity addr_ctrl is
    port(
 	aclk:     in std_ulogic; -- Clock
 	aresetn:  in std_ulogic;  -- Reset
-        computation_start: in std_ulogic;
 	--------------------------------
 	-- AXI lite slave port s0_axi --
 	--------------------------------
@@ -135,6 +133,7 @@ end entity addr_ctrl;
 
 architecture window of addr_ctrl is
 
+  signal computation_start:         std_ulogic;
   signal s0_axi_m2s:		    axilite_gp_m2s;
   signal s0_axi_s2m:		    axilite_gp_s2m;
   signal m_axi_m2s:		    axi_hp_m2s;
@@ -167,19 +166,23 @@ architecture window of addr_ctrl is
   signal write_strobe:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal write_strobe_last:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal read_offset:		    integer range 0 to 79; -- tell how many cells have been written to memory
-  signal i:			    NATURAL range 0 to WORLD_HEIGHT-1; -- line index
-  signal j:			    NATURAL range 0 to WORLD_WIDTH-1; -- column index
+  signal i:			    NATURAL range 0 to WORLD_HEIGHT_MAX; -- line index
+  signal j:			    NATURAL range 0 to WORLD_WIDTH_MAX; -- column index
+  signal WORLD_HEIGHT: NATURAL range 0 to WORLD_HEIGHT_MAX;
+  signal WORLD_WIDTH: NATURAL range 0 to WORLD_WIDTH_MAX;
 
 begin
 
-  i_axi_register: entity axi_register_lib.axi_register(rtl)
+  i_axi_register: entity axi_register_lib.axi_register_v1(rtl)
   port map(
     aclk      => aclk,
     aresetn   => aresetn,
-    s0_axi_m2s => s0_axi_m2s,
-    s0_axi_s2m => s0_axi_s2m,
-    gpi => gpi,
-    gpo => gpo
+    s_axi_m2s => s0_axi_m2s,
+    s_axi_s2m => s0_axi_s2m,
+    height    => height,
+    width     => width,
+    start     => global_start,
+    color     => color
   );
 
   i_axi_register_master: entity axi_register_lib.axi_register_master(rtl)
@@ -204,7 +207,7 @@ begin
     w_strobe_last => write_strobe_last
   );
 
-  i_cell_ctrl: entity main_lib.cell_ctrl
+  i_cell_ctrl: entity cell_controller_lib.cell_ctrl
   port map(
     clk             => aclk,
     rstn            => aresetn,
@@ -216,6 +219,31 @@ begin
     ready_reading   => ready_reading_cell_ctrl
   );
         
+  WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
+  WORLD_WIDTH <= to_integer(unsigned(width));
+
+  computation_clock: process(aclk)
+
+  variable count:     INTEGER range 0 to 200000;
+  begin
+    if aclk = '1' then
+      if aresetn = '0' then -- reset
+        count := 0;
+      elsif global_start = '1' then
+        count := count +1;
+        computation_start <= '0';
+        if count = 100000 then
+          computation_start <= '1';
+        elsif count > 100000 then -- TESTING Will only raise it once
+          count := 100001;
+        elsif count = 200000 then
+          computation_start <= '1';
+          count := 0;
+        end if;
+      end if; 
+    end if;
+  end process;
+
   read_process: process(aclk)
     variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
     variable read_line:               NATURAL;                -- local copies of i,
@@ -225,44 +253,45 @@ begin
     variable place_in_first_word:     unsigned(2 downto 0);   -- offset in the 64 bit space mapped by the address
     variable right_torus:             std_ulogic := '0';      -- logic test to check if we are with a right torus
     variable next_state:              ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
+    variable init:                    std_ulogic;
   begin
     if aclk = '1' then -- syncronous block
       if aresetn = '0' then -- reset
         i <= WORLD_HEIGHT - 1;-- Game height - 1, size in cells not bits ( 1 cell = 8 bits)
         j <= 0; -- up left corner
-        read_state <= idle;
+        read_state <= r_idle;
         first_time := '1';
       else -- no reset
         read_request <= '0'; -- default values
         case read_state is
-          when IDLE => -- wait for the next generation computation to start
+          when R_IDLE => -- wait for the next generation computation to start
             -- initialisation state, we set variables as in reset
             i <= WORLD_HEIGHT - 1; -- we first need to fetch this line by convention
             j <= 0;
             first_time  := '1';
             init        := '1';
             if computation_start = '1' then -- the life awakens (new generaion computation)
-              read_state <= START_LINE; -- start of a column computation
+              read_state <= R_START_LINE; -- start of a column computation
             end if;
 
-          when START_LINE =>    
+          when R_START_LINE =>    
             -- start of a new column computation
             -- i is the line index and j the column one
             if j = 0 then -- we are on the first column, we need to fetch the last cell (index in line = width-1)
-              read_state <= PRELOAD;
+              read_state <= R_PRELOAD;
             else -- we don't need to fetch last cell in line
-              read_state <= INLINE;
+              read_state <= R_INLINE;
             end if;
 
-          when PRELOAD =>
-            -- PRELOAD state
+          when R_PRELOAD =>
+            -- R_PRELOAD state
             -- whenever j is at the border of the world, we fetch
-            if (ready_reading_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
+            if (ready_reading_cell_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
               init                    :=  '0';
               done_reading_cell_ctrl  <= '0'; -- the next cells are not valid
               read_line               := i;
               read_column             := WORLD_WIDTH-1; -- we take into account the torus effect
-              offset_first_to_load    := coordinates2offset(read_line, read_column);
+              offset_first_to_load    := coordinates2offset(read_line, read_column, WORLD_WIDTH);
               address_to_start_load   := r_base_address + offset_first_to_load(31 downto 6) & b"000000" ;
               place_in_first_word     := offset_first_to_load(5 downto 3); -- this is the offset in a 64bits word. There are 8 of them (the number of cells mapped to the address)
               read_strobe             <= (to_integer(place_in_first_word) => '1', others => '0'); -- we set the bit of the cell to be first read to 1, acts like a mask
@@ -270,16 +299,16 @@ begin
               raddress                <= std_ulogic_vector(address_to_start_load); -- since we are in the case ready_reading we can change the read_address
               read_offset             <= 0;
               rsize                   <= 0; -- set the read size 
-              next_state              := INLINE;
+              next_state              := R_INLINE;
               read_state              <= R_WAIT;
             end if;
 
-          when POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
+          when R_POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
             done_reading_cell_ctrl <= '1';
-            read_column := 0; -- we need the column 0 
+            read_column := 0; -- we need the column 0
             read_line := i; -- of the current line
             rsize <= 0; -- we only need 1 cell
-            offset_first_to_load := coordinates2offset(read_line, read_column);
+            offset_first_to_load := coordinates2offset(read_line, read_column, WORLD_WIDTH);
             address_to_start_load := r_base_address + offset_first_to_load(31 downto 6) & b"000000";
             place_in_first_word := offset_first_to_load(5 downto 3);
             read_strobe <= (to_integer(place_in_first_word) => '1', others => '0'); -- mask to keep the desired cell in the 8 mapped by the 64 bit word
@@ -288,9 +317,9 @@ begin
             done_reading_cell_ctrl <= '1';
             if i = 1 then
               if first_time ='0' then
-                read_state <= IDLE; -- no need to update j, we are already in the last column
+                read_state <= R_IDLE; -- no need to update j, we are already in the last column
               else
-                read_state <= INLINE;
+                read_state <= R_INLINE;
                 i <= i+1;
               end if;
               first_time := not first_time;
@@ -300,10 +329,10 @@ begin
               else
                 i <= i+1;
               end if;
-              read_state <= INLINE;
+              read_state <= R_INLINE;
             end if;
 
-          when INLINE => -- we are in the middle of the world
+          when R_INLINE => -- we are in the middle of the world
             if ready_reading_cell_ctrl = '1' or (j = 0) then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
               read_line := i;
               right_torus:= '0'; -- test if we need to go to postload state or not
@@ -313,21 +342,21 @@ begin
               else
                 if j = 0 then -- left torus, the leftmost cell has already been fetched
                   done_reading_cell_ctrl <= '1';
-                  next_state := PRELOAD; -- will be overwritten in the case of a shift to the right (end of the column 0)
+                  next_state := R_PRELOAD; -- will be overwritten in the case of a shift to the right (end of the column 0)
                   read_state <= R_WAIT;
                   read_column := j;
-                  rsize <= N_CELL-1;
+                  rsize <= 9;
                   read_offset <= 1;
                 else -- right torus, we will need to finish the read by invoking postload
                   right_torus := '1';
                   done_reading_cell_ctrl <= '0';
-                  next_state := POSTLOAD; -- mode right torus
+                  next_state := R_POSTLOAD; -- mode right torus
                   read_state <= R_WAIT;
                   read_column := j-1;
-                  rsize <= WORLD_WIDTH - j + 1; -- number of cells to fetch inline
+                  rsize <= 9; -- number of cells to fetch inline
                 end if;
               end if;
-              offset_first_to_load := coordinates2offset(read_line, read_column);
+              offset_first_to_load := coordinates2offset(read_line, read_column, WORLD_WIDTH);
               address_to_start_load :=r_base_address + offset_first_to_load(31 downto 6) & b"000000";
               place_in_first_word := offset_first_to_load(5 downto 3);
               for k in 0 to 7 loop -- init of the read_strobe array
@@ -346,7 +375,7 @@ begin
                   else
                     i <= WORLD_HEIGHT - 1; -- reset the line index
                     j <= j + N_CELL - 2;
-                    next_state := INLINE;
+                    next_state := R_INLINE;
                     read_state <= R_WAIT;
                   end if;
                   first_time := not first_time; -- reset / unset of first_time check
@@ -358,13 +387,13 @@ begin
                   end if;
                 end if;
               else
-                next_state := POSTLOAD;
+                next_state := R_POSTLOAD;
                 read_state <= R_WAIT;
               end if;
             end if;
-          when R_WAIT =>
-            if done_reading = '1'; then
-              read_state <= next_state;
+          when R_WAIT => -- we wait for the current query completion before moving on
+            if done_reading = '1' then
+              read_state <= next_state; -- we load the saved nex_state;
             end if;
         end case;
       end if;
@@ -374,13 +403,13 @@ begin
 
   write_process: process(aclk)
     variable address_to_write:      unsigned(31 downto 0); -- where to write address in memory
-    variable write_line:            integer range 0 to WORLD_HEIGHT-1; -- write line index
-    variable write_column:          integer range 0 to WORLD_WIDTH-1; -- write column index
+    variable write_line:            integer range 0 to WORLD_HEIGHT_MAX-1; -- write line index
+    variable write_column:          integer range 0 to WORLD_WIDTH_MAX-1; -- write column index
     variable offset_first_to_write: unsigned(31 downto 0); -- offset in the waddress
     variable place_in_first_word:   unsigned(2 downto 0); -- word offset
     variable offset_last_to_write:  unsigned(31 downto 0); 
     variable place_in_last_word:    unsigned(2 downto 0); 
-    variable cpt:                   integer range -2 to WORLD_HEIGHT; -- cpt that keep the current line to be written. Is valid when positive
+    variable cpt:                   integer range -2 to WORLD_HEIGHT_MAX; -- cpt that keep the current line to be written. Is valid when positive
   begin
     if aclk = '1' then
       if aresetn = '0' then
@@ -415,15 +444,15 @@ begin
               write_column := j;                  --  We write on the read column
               write_line := cpt;                  --  We write the "middle" line
 
-              offset_first_to_write := coordinates2offset(write_line, write_column);
+              offset_first_to_write := coordinates2offset(write_line, write_column, WORLD_WIDTH);
               address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
               place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
               if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
-                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)) -- Wsize <= (WORLD_WIDTH -1 -j)/8
+                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8
                 -- We don't want overflow on other addresses
               elsif place_in_first_word <= "001" then
                 wsize <= 8; -- we don't overflow on trailing 64-bit words
-              else  place_in_first_word > "001" then
+              elsif  place_in_first_word > "001" then
                 wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
               end if;
               for i in 0 to 7 loop
@@ -434,9 +463,9 @@ begin
                 end if;
               end loop;
               if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then -- TODO See this condition again 
-                offset_last_to_write := coordinates2offset(write_line, WORLD_WIDTH - 1);  -- Right torus, the last is the border cell
+                offset_last_to_write := coordinates2offset(write_line, WORLD_WIDTH - 1, WORLD_WIDTH);  -- Right torus, the last is the border cell
               else
-                offset_last_to_write := coordinates2offset(write_line, write_column + 77);-- No torus, the last is the first cell + 78
+                offset_last_to_write := coordinates2offset(write_line, write_column + 77, WORLD_WIDTH);-- No torus, the last is the first cell + 78
               end if;
               place_in_last_word := offset_last_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
               for i in 0 to 7 loop
@@ -455,10 +484,8 @@ begin
               cpt := cpt + 1;            --  The next line to write will be cpt+1
               write_state <= W_START;
               -- TODO add test finished column, go to W_START and reset cpt
-              if ((write_line = WORLD_HEIGHT - 1) and (write_column + (N_CELL - 2) > WORLD_WIDTH)) then -- TODO See this conditionn again-- when we wrote the last line, we go to IDLE state waiting for another generation computation or we are asked to stop writing
+              if (write_line = WORLD_HEIGHT - 1) then
                 write_state <= W_IDLE;
-              elsif ((write_line = WORLD_HEIGHT - 1) then
-                write_state <=
               end if;
               done_writing_cell_ctrl <= '1'; --  Notify that the cells have been written in memory
             end if;

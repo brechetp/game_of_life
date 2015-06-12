@@ -1,10 +1,11 @@
 -- file cell_sim.vhd
 --
 library ieee;
-use ieee.numeric_std.all;
 use ieee.std_logic_1164.all;
+library global_lib;
+use global_lib.numeric_std.all;
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
 
 -- the entity of a simulation environment usually has no input output ports.
 -- file cell_sim_arc.vhd
@@ -31,6 +32,7 @@ architecture sim of cell_sim is
   signal index8: integer;
   signal index: integer;
   signal state_bit: std_ulogic; -- to test state2bit function
+  signal run: std_ulogic := '0';
 
 begin
 
@@ -95,6 +97,10 @@ begin
         W <= CELL_STATE'VAL(index7);
         NW <= CELL_STATE'VAL(index8);
         SELF <= CELL_STATE'VAL(index);
+        run <= '0';
+        if rand(1 downto 0) = "00" then
+          run <= '1';
+        end if;
         rand <= resize(to_unsigned(1664525, 32) * rand + to_unsigned(1013904223, 32), 32);
       end if;
       wait on clk;
@@ -112,7 +118,7 @@ begin
   (
     clk       => clk,
     rstn => rstn,
-    mode      => '1',
+    run      => run,
     N         => N,
     NE        => NE,
     E         => E,
@@ -121,7 +127,7 @@ begin
     SW        => SW,
     W         => W,
     NW        => NW,
-    self_state => SELF,
+    self => SELF,
     state_out => state
   );
 

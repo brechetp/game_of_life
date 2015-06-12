@@ -1,8 +1,9 @@
 library ieee;
-use ieee.numeric_std.all;
+library global_lib;
+use global_lib.numeric_std.all;
 use ieee.std_logic_1164.all;
 
-package pack_cell is
+package cell_pkg is
 
   type CELL_STATE is (DEAD, NEWDEAD, NEWALIVE, ALIVE); -- the cell status
   type CELL_VECTOR is array(natural range <>) of CELL_STATE;
@@ -23,10 +24,10 @@ package pack_cell is
   function csa_adder(x, y, z: std_ulogic) return BIT_COUNT; -- returns a two bit value from bits
   function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT;
 
-end package pack_cell;
+end package cell_pkg;
 
 
-package body pack_cell is
+package body cell_pkg is
 
   function "+"(S1, S2: CELL_STATE) return N_COUNT is
     variable SUM: N_COUNT := 0;
@@ -101,6 +102,6 @@ package body pack_cell is
 
 
 
-end package body pack_cell;
+end package body cell_pkg;
 
     

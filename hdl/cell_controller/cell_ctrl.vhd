@@ -12,9 +12,11 @@
 library ieee;
 use ieee.std_logic_1164.all;
 library celloux_lib;
-use celloux_lib.pack_cell.all;
+use celloux_lib.cell_pkg.all;
+library address_controller_lib;
+use address_controller_lib.addr_ctrl_pkg.all;
 library WORK;
-use WORK.main_pkg.all;
+use WORK.cell_ctrl_pkg.all;
 
 entity cell_ctrl is
   port(

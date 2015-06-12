@@ -24,14 +24,15 @@
 #	random_pkg
 
 addr_ctrl_pkg: \ 
-        global_lib.numeric_std \
-        global_lib.utils \
-        main_lib.main_pkg
+        global_lib.numeric_std
+
 addr_ctrl: \
         global_lib.numeric_std \
         global_lib.utils \
         axi_lib.axi_pkg \
-        axi_register_lib.axi_register \
+        axi_register_lib.axi_register_v1 \
+        axi_register_lib.axi_register_master \
         addr_ctrl_pkg \
-        celloux_lib.pack_cell \
-        celloux_lib.cell
+        celloux_lib.cell_pkg \
+        celloux_lib.cell \
+        cell_controller_lib.cell_ctrl

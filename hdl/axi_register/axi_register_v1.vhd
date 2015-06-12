@@ -21,7 +21,7 @@ use axi_lib.axi_pkg.all;
 
 -- See the README file for a detailed description of the AXI register
 
-entity axi_register is
+entity axi_register_v1 is
   generic(na1: natural := 30;   -- Number of significant bits in S_AXI addresses (12 bits => 4kB address space)
           nr1: natural := 4);   -- Number of 32-bits registers in S_AXI address space; addresses are 0 to 4*(nr1-1)
   port(
@@ -36,9 +36,9 @@ entity axi_register is
     start:	   out std_ulogic;			-- Start signal for the simulation
     color:	   out std_ulogic_vector(31 downto 0) 	-- Color scale (grey scale)
   );
-end entity axi_register;
+end entity axi_register_v1;
 
-architecture rtl of axi_register is
+architecture rtl of axi_register_v1 is
 
   constant l2nr1: natural := log2_up(nr1); -- Log2 of nr1 (rounded towards infinity)
 
@@ -91,18 +91,18 @@ begin
                 s_axi_s2m.bresp <= axi_resp_decerr;
               elsif widx = 2 then -- Start signal from CPU
                 start_loc <= '1';
-		start <= start_loc;
-	      elsif start_loc = '1' then -- Cannot change the value after the initialization
-		s_axi_s2m.bresp <= axi_resp_slverr;
-	      elsif widx = 0 then -- Change the height before the initialization
-		height_loc <= s_axi_m2s.wdata(15 downto 0);
-		height <= height_loc;
-	      elsif widx = 1 then -- Change the width before the initialization
-		width_loc <= s_axi_m2s.wdata(15 downto 0);
-		width <= width_loc;
-	      elsif widx = 3 then -- Change the color scale before the initialization
-		color_loc <= s_axi_m2s.wdata(31 downto 0);
-		color <= color_loc;
+                start <= start_loc;
+              elsif start_loc = '1' then -- Cannot change the value after the initialization
+                s_axi_s2m.bresp <= axi_resp_slverr;
+              elsif widx = 0 then -- Change the height before the initialization
+                height_loc <= s_axi_m2s.wdata(15 downto 0);
+                height <= height_loc;
+              elsif widx = 1 then -- Change the width before the initialization
+                width_loc <= s_axi_m2s.wdata(15 downto 0);
+                width <= width_loc;
+              elsif widx = 3 then -- Change the color scale before the initialization
+                color_loc <= s_axi_m2s.wdata(31 downto 0);
+                color <= color_loc;
               end if;
               s_axi_s2m.awready <= '1';
               s_axi_s2m.wready <= '1';
