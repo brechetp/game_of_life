@@ -324,7 +324,7 @@ begin
                   next_state := R_PRELOAD; -- will be overwritten in the case of a shift to the right (end of the column 0)
                   read_state <= R_WAIT;
                   read_column := j;
-                  rsize <= N_CELL-1;
+                  rsize <= 9;
                   read_offset <= 1;
                 else -- right torus, we will need to finish the read by invoking postload
                   right_torus := '1';
@@ -332,7 +332,7 @@ begin
                   next_state := R_POSTLOAD; -- mode right torus
                   read_state <= R_WAIT;
                   read_column := j-1;
-                  rsize <= WORLD_WIDTH - j + 1; -- number of cells to fetch inline
+                  rsize <= 9; -- number of cells to fetch inline
                 end if;
               end if;
               offset_first_to_load := coordinates2offset(read_line, read_column, WORLD_WIDTH);
