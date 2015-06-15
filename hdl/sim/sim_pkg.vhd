@@ -12,6 +12,7 @@ package sim_pkg is
 
   type data_row is array(0 to 10) of std_logic_vector(63 downto 0);
   type data_table is array(0 to 30) of data_row;
+  type cell_table is array(0 to 30) of cell_vector(0 to 87);
   
   constant white_cells: data_table := (others => (others => (others =>'1')));
 
@@ -19,6 +20,7 @@ package sim_pkg is
   type READ_STATE_TYPE is (R_IDLE, SEND);
 
   function gen_random_data_table(seed: natural) return data_table;
+  function coloring(data: data_table) return cell_table;
 
 end package sim_pkg;
 
@@ -40,6 +42,19 @@ package body sim_pkg is
     end loop;
     return data;
   end gen_random_data_table;
+
+  function coloring(data: data_table) return cell_table is
+    variable res: cell_table;
+  begin
+    for i in 0 to 30 loop
+      for j in 0 to 10 loop
+        for k in 0 to 7 loop
+          res(i)(j*8+k) := color2state(std_ulogic_vector(data(i)(j)(8*(k+1)-1 downto k*8)));
+        end loop;
+      end loop;
+    end loop;
+    return res;
+  end coloring;
 
 end package body;
 

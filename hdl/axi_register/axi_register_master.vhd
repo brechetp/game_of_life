@@ -92,7 +92,7 @@ begin
               rstate <= request;
             end if;
           when request=>
-            if m_axi_s2m.arready <= '1' then
+            if m_axi_s2m.arready = '1' then
               m_axi_m2s.arvalid	<=  '0';
               m_axi_m2s.rready  <=  '1';
               rstate	        <=  read;

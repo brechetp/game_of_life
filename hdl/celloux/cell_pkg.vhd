@@ -51,7 +51,7 @@ package body cell_pkg is
 
   function color2state(colour: std_ulogic_vector) return CELL_STATE is -- returns the cell state matching the color colour
     variable index: natural; -- the index of the cell we are looking for, we just need to look at the bits #2 & #7 to find it
-    variable b_index: std_ulogic_vector(1 downto 0) := colour(2) & colour(7); -- e.g RED |1|1100|0|00 --> 10 --> 01 --> NEWDEAD
+    variable b_index: std_ulogic_vector(1 downto 0) := colour(colour'LOW+2) & colour(colour'HIGH); -- e.g RED |1|1100|0|00 --> 10 --> 01 --> NEWDEAD
   begin
     index := to_integer(unsigned(b_index));
     return CELL_STATE'VAL(index); -- we look up the correct index in the state tab

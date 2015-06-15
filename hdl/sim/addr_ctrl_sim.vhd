@@ -125,6 +125,11 @@ architecture sim of addr_ctrl_sim is
 
   signal read_state:                    READ_STATE_TYPE;
   signal write_state:                   WRITE_STATE_TYPE;
+  signal addr_read_state:               ADDR_CTRL_READ_STATE;
+  signal addr_write_state:              ADDR_CTRL_WRITE_STATE; 
+  signal computation_start:             std_ulogic;
+  signal global_start:                  std_ulogic;
+  signal colored_cells:                 cell_table;
   --signal rready_fool:                   std_ulogic;
 
 begin
@@ -226,7 +231,11 @@ begin
     testing_rc_vector               => read_vector_from_addr_ctrl,
     testing_wc_vector               => write_vector_from_addr_ctrl,
     testing_width                   => test_width,
-    testing_height                  => test_height
+    testing_height                  => test_height,
+    testing_write_state             => addr_write_state,
+    testing_read_state              => addr_read_state,
+    testing_computation_start       => computation_start,
+    testing_global_start            => global_start
   );
 
   clk_gen: process
@@ -243,6 +252,8 @@ begin
 
   data <= gen_random_data_table(0) when (gen = '1') else -- random read input generation at CC #5
           white_cells;
+
+  colored_cells <= coloring(data);
 
   order_generator: process(aclk)
     variable cpt: integer :=0;
@@ -274,7 +285,7 @@ begin
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
           s0_axi_awaddr     <= "000000001000"; --start
-          s0_axi_wdata      <= "00000000011000000000110000000011";
+          s0_axi_wdata      <= "00000000000000000000000000000001";
         end if;
         if cpt = 200 then
           stop_sim <= '1';
@@ -302,6 +313,7 @@ begin
 
       else
         m_axi_rlast <= '0';
+        m_axi_rvalid <= '0';
         case read_state is
           when R_IDLE =>
             if m_axi_arvalid = '1' then
