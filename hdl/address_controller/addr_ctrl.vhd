@@ -294,7 +294,8 @@ begin
               offset_first_to_load    := coordinates2offset(read_line, read_column, WORLD_WIDTH);
               address_to_start_load   := r_base_address + offset_first_to_load(31 downto 6) & b"000000" ;
               place_in_first_word     := offset_first_to_load(5 downto 3); -- this is the offset in a 64bits word. There are 8 of them (the number of cells mapped to the address)
-              read_strobe             <= (to_integer(place_in_first_word) => '1', others => '0'); -- we set the bit of the cell to be first read to 1, acts like a mask
+              read_strobe             <= (others => '0');
+              read_strobe(to_integer(place_in_first_word)) <= '1'; -- we set the bit of the cell to be first read to 1, acts like a mask
               read_request            <= '1';
               raddress                <= std_ulogic_vector(address_to_start_load); -- since we are in the case ready_reading we can change the read_address
               read_offset             <= 0;
@@ -311,7 +312,8 @@ begin
             offset_first_to_load := coordinates2offset(read_line, read_column, WORLD_WIDTH);
             address_to_start_load := r_base_address + offset_first_to_load(31 downto 6) & b"000000";
             place_in_first_word := offset_first_to_load(5 downto 3);
-            read_strobe <= (to_integer(place_in_first_word) => '1', others => '0'); -- mask to keep the desired cell in the 8 mapped by the 64 bit word
+            read_strobe <= (others => '0');
+            read_strobe(to_integer(place_in_first_word)) <= '1'; -- mask to keep the desired cell in the 8 mapped by the 64 bit word
             read_request <= '1'; -- we request a read
             raddress <= std_ulogic_vector(address_to_start_load);
             done_reading_cell_ctrl <= '1';
