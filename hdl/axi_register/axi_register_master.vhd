@@ -71,6 +71,7 @@ begin
   m_axi_m2s.awprot  <= (others => '0');
   m_axi_m2s.awqos   <= (others => '0');
   m_axi_m2s.wid	    <= (others => '0');
+  m_axi_m2s.awcache <= (others => '0');
 
   read_pr: process(aclk)
     variable read_cell_number:integer range 0 to 80;
@@ -79,6 +80,12 @@ begin
     if rising_edge(aclk) then
       if aresetn = '0' then
         rstate <= idle;
+        m_axi_m2s.arvalid   <=  '0';
+        m_axi_m2s.araddr    <=  (others => '0');
+        m_axi_m2s.arlen	    <=  (others => '0');
+        m_axi_m2s.arsize    <=  "011";
+        m_axi_m2s.arburst   <=  axi_burst_incr;
+        m_axi_m2s.rready    <=  '0';
       else
         done_reading <= '0';
         case rstate is
@@ -88,7 +95,6 @@ begin
               m_axi_m2s.araddr	<=  raddress;
               m_axi_m2s.arlen	<=  std_ulogic_vector(to_unsigned(rsize, m_axi_m2s.arlen'length));
               m_axi_m2s.arsize	<=  "011";
-              m_axi_m2s.arburst	<=  axi_burst_incr;
               rstate <= request;
             end if;
           when request=>
@@ -129,14 +135,14 @@ begin
         write_word_cpt	    :=	0;
         write_cell_number   :=	0;
         wstate               <= idle;
-      else
-        done_writing <= '0';
         m_axi_m2s.bready  <= '1'; --  We are always ready to receive responces
         m_axi_m2s.wvalid  <= '1'; --  Our write data is always valid 
-        tmp               :=  0;
+      else
+        done_writing <= '0';
+        tmp          :=  0;
         for i in 0 to 7 loop
-          if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (tmp < 78) then	--  First burst call, will be written, not overflowing the cell_vector 
-            m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(tmp));	--  Put the cell in a space that will be written
+          if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (write_cell_number + tmp < 78) then	--  First burst call, will be written, not overflowing the cell_vector 
+            m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(write_cell_number +  tmp));	--  Put the cell in a space that will be written
             tmp := tmp +1;                          							--  Assert that we've written another cell.
           end if;
         end loop;
@@ -146,7 +152,7 @@ begin
               m_axi_m2s.awvalid	<=  '1';
               m_axi_m2s.awaddr	<=  waddress;
               m_axi_m2s.awlen	<=  std_ulogic_vector(to_unsigned(wsize, m_axi_m2s.awlen'length));
-              m_axi_m2s.awsize	<=  b"011";
+              m_axi_m2s.awsize	<=  "011";
               m_axi_m2s.awburst	<=  axi_burst_incr;
               m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
               wstate <= request;
@@ -156,7 +162,6 @@ begin
               m_axi_m2s.awvalid	<=  '0';
               wstate	    	<=  write;
               write_cell_number	:=  0;		--  Reset cpt value for next write.
-              tmp		        :=  1;      
               write_word_cpt	:=  0;
             end if;
           when write=>

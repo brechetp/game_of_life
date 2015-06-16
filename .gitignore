@@ -15,5 +15,6 @@ _*
 exists
 *.inc
 *.defs
-.sw[o|p]
+*.sw[o|p]
+*.out
 *.vstf

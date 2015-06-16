@@ -127,20 +127,8 @@ entity addr_ctrl is
 	-- Write response channel
 	m_axi_bvalid:  in  std_logic;
 	m_axi_bid:     in  std_logic_vector(5 downto 0);
-	m_axi_bresp:   in  std_logic_vector(1 downto 0);
+	m_axi_bresp:   in  std_logic_vector(1 downto 0)
          
-        -- TESTING --
-        --
-        testing_rc_vector: out cell_vector(0 to N_CELL-1);
-        testing_wc_vector: out cell_vector(0 to N_CELL-3);
-        testing_height: out integer;
-        testing_width: out integer;
-        testing_read_state: out ADDR_CTRL_READ_STATE;
-        testing_write_state: out ADDR_CTRL_WRITE_STATE;
-        testing_computation_start: out std_ulogic;
-        testing_global_start: out std_ulogic
-
-        
  );
 end entity addr_ctrl;
 
@@ -234,17 +222,6 @@ begin
         
   WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
   WORLD_WIDTH <= to_integer(unsigned(width));
-  testing_height <= to_integer(unsigned(height));
-  testing_width <= to_integer(unsigned(width));
-
-  -- TESTING --
-  testing_rc_vector <= read_cell_vector;
-  testing_wc_vector <= write_cell_vector;
-
-  testing_computation_start <= computation_start;
-  testing_read_state <= read_state;
-  testing_write_state <= write_state;
-  testing_global_start <= global_start;
 
   computation_clock: process(aclk) 
   variable count:     INTEGER range 0 to 200000;
@@ -255,7 +232,7 @@ begin
       elsif global_start = '1' then
         count := count +1;
         computation_start <= '0';
-        if count = 80 then
+        if count = 100000 then
           computation_start <= '1';
         elsif count > 100000 then -- TESTING Will only raise it once
           count := 100001;
@@ -476,7 +453,7 @@ begin
               address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
               place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
               if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
-                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(16 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
+                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(15 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
                 -- We don't want overflow on other addresses
               elsif place_in_first_word <= "001" then
                 wsize <= 8; -- we don't overflow on trailing 64-bit words
