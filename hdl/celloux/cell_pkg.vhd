@@ -7,8 +7,7 @@ package cell_pkg is
 
   type CELL_STATE is (DEAD, NEWDEAD, NEWALIVE, ALIVE); -- the cell status
   type CELL_VECTOR is array(natural range <>) of CELL_STATE;
-  subtype COLOR is STD_ULOGIC_VECTOR(7 downto 0); -- the cell colors, in the same order as the cells. BLACK: 00000000, RED: 11100000, GREEN: 00011100, WHITE: 11111111 
-  type COLOR_VECTOR is array(natural range <>) of COLOR;
+  type COLOR_VECTOR is array(natural range <>) of std_ulogic_vector(7 downto 0);-- the cell colors, in the same order as the cells. BLACK: 00000000, RED: 11100000, GREEN: 00011100, WHITE: 11111111 
   subtype N_COUNT is INTEGER range 0 to 8; -- the number of neighbors
   subtype BIT_COUNT is std_ulogic_vector (1 downto 0); -- the number of neighbors in binary mod 4
 
@@ -17,8 +16,8 @@ package cell_pkg is
   function "+"(S1, S2: CELL_STATE) return N_COUNT;
   function "+"(N: N_COUNT; S: CELL_STATE) return N_COUNT;
   function invert(state: CELL_STATE) return CELL_STATE;
-  function color2state(colour: COLOR) return CELL_STATE;
-  function state2color(state: CELL_STATE) return COLOR; 
+  function color2state(colour: std_ulogic_vector) return CELL_STATE;
+  function state2color(state: CELL_STATE) return std_ulogic_vector; 
   function state2bit(s: cell_state) return std_ulogic; -- gives a 1 if alive/new_alive, else 0
   function csa_adder(s1, s2, s3: cell_state) return BIT_COUNT; -- returns a two bit value from states
   function csa_adder(x, y, z: std_ulogic) return BIT_COUNT; -- returns a two bit value from bits
@@ -50,15 +49,15 @@ package body cell_pkg is
     return SUM;
   end "+";
 
-  function color2state(colour: COLOR) return CELL_STATE is -- returns the cell state matching the color colour
+  function color2state(colour: std_ulogic_vector) return CELL_STATE is -- returns the cell state matching the color colour
     variable index: natural; -- the index of the cell we are looking for, we just need to look at the bits #2 & #7 to find it
-    variable b_index: std_ulogic_vector(1 downto 0) := colour(2) & colour(7); -- e.g RED |1|1100|0|00 --> 10 --> 01 --> NEWDEAD
+    variable b_index: std_ulogic_vector(1 downto 0) := colour(colour'LOW+2) & colour(colour'HIGH); -- e.g RED |1|1100|0|00 --> 10 --> 01 --> NEWDEAD
   begin
     index := to_integer(unsigned(b_index));
     return CELL_STATE'VAL(index); -- we look up the correct index in the state tab
   end color2state;
 
-  function state2color(state: CELL_STATE) return COLOR is -- returns the color matching the cell state of cell
+  function state2color(state: CELL_STATE) return std_ulogic_vector is -- returns the color matching the cell state of cell
   begin
     return COLORS(CELL_STATE'POS(state)); -- COLORS is the global array defined in this package
   end state2color;

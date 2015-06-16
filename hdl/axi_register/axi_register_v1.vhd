@@ -36,6 +36,7 @@ entity axi_register_v1 is
     start:	   out std_ulogic;			-- Start signal for the simulation
     color:	   out std_ulogic_vector(31 downto 0); 	-- Color scale (grey scale)
     widthx:	   out natural range 0 to 3
+
   );
 end entity axi_register_v1;
 
@@ -50,10 +51,6 @@ architecture rtl of axi_register_v1 is
   subtype reg_type is std_ulogic_vector(31 downto 0);
   type reg_array is array(0 to nr1 - 1) of reg_type;
   signal regs: reg_array;
-  signal start_loc: std_ulogic := '0';
-  signal height_loc: std_ulogic_vector(15 downto 0):= "0000001010000000";
-  signal width_loc: std_ulogic_vector(15 downto 0):= "0000001010000000";
-  signal color_loc: std_ulogic_vector(31 downto 0):= "00000000000000000000000000000000";
 
 begin 
 
@@ -68,15 +65,15 @@ begin
     variable wok, rok: boolean;                           -- Write (read) address mapped
     variable widx, ridx: natural range 0 to 2**l2nr1 - 1; -- Write (read) register index
   begin
-    height <= height_loc; -- Default height is 1280
-    width <=  width_loc; -- Default width is 1280
-    start <= start_loc; -- No start signal at the beginning
-    color <= color_loc; -- The color scale needs to be set
     if rising_edge(aclk) then
       if aresetn = '0' then
         regs <= (others => (others => '0'));
         s_axi_s2m <= (rdata => (others => '0'), rresp => axi_resp_okay, bresp => axi_resp_okay, others => '0');
         state := idle;
+        height <= "0000001010000000";-- Default height is 1280
+        width <= "0000001010000000";-- Default width is 1280
+        start <= '0'; -- No start signal at the beginning
+        color <= (others => '0'); -- The color scale needs to be set
       else
 
         -- Addresses ranges
@@ -90,19 +87,13 @@ begin
               if or_reduce(s_axi_m2s.awaddr(na1 - 1 downto l2nr1 + 2)) /= '0' or widx >= nr1 then -- If unmapped address
                 s_axi_s2m.bresp <= axi_resp_decerr;
               elsif widx = 2 then -- Start signal from CPU
-                start_loc <= '1';
-                start <= start_loc;
-              elsif start_loc = '1' then -- Cannot change the value after the initialization
-                s_axi_s2m.bresp <= axi_resp_slverr;
+                start <= s_axi_m2s.wdata(0);
               elsif widx = 0 then -- Change the height before the initialization
-                height_loc <= s_axi_m2s.wdata(15 downto 0);
-                height <= height_loc;
+                height <= s_axi_m2s.wdata(15 downto 0);
               elsif widx = 1 then -- Change the width before the initialization
-                width_loc <= s_axi_m2s.wdata(15 downto 0);
-                width <= width_loc;
+                width <= s_axi_m2s.wdata(15 downto 0);
               elsif widx = 3 then -- Change the color scale before the initialization
-                color_loc <= s_axi_m2s.wdata(31 downto 0);
-                color <= color_loc;
+                color <= s_axi_m2s.wdata(31 downto 0);
               end if;
               s_axi_s2m.awready <= '1';
               s_axi_s2m.wready <= '1';

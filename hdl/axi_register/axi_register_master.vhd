@@ -26,29 +26,29 @@ use celloux_lib.cell_pkg.all;
 
 entity axi_register_master is
   port(
-    aclk:       in  std_ulogic;
-    aresetn:    in  std_ulogic;
+    aclk:                      in  std_ulogic;
+    aresetn:                   in  std_ulogic;
     -- AXI lite slave port
-    m_axi_m2s:  out axi_hp_m2s;
-    m_axi_s2m:  in  axi_hp_s2m;
-    -- Read control signals 
-    raddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start reading
-    rsize:	      in  integer range 0 to 15;		      --  size of reading burst
-    r_strobe:	    in  std_ulogic_vector(7 downto 0);  --  Which part of the first 64 bit to read into rc_vector
-    read_rq :	    in  std_ulogic;			                --  request new read
-    r_offset:	    in	integer range 0 to 79;		      --  offset from which to write in rc_vector
+    m_axi_m2s:                 out axi_hp_m2s;
+    m_axi_s2m:                 in  axi_hp_s2m;
+    -- Read control signals
+    raddress:                  in  std_ulogic_vector(31 downto 0); --  Address from which to start reading
+    rsize:                     in  integer range 0 to 15;		      --  size of reading burst
+    r_strobe:                  in  std_ulogic_vector(7 downto 0);  --  Which part of the first 64 bit to read into rc_vector
+    read_rq :                  in  std_ulogic;			                --  request new read
+    r_offset:                  in	integer range 0 to 79;		      --  offset from which to write in rc_vector
     -- Read response signals
-    done_reading: out std_ulogic;                     --  Read finished
-    rc_vector:	  out cell_vector(0 to 79);           --  cell array to be read from
+    done_reading:              out std_ulogic;                     --  Read finished
+    rc_vector:                 out cell_vector(0 to 79);           --  cell array to be read from
     -- Write control signals
-    waddress:	    in  std_ulogic_vector(31 downto 0); --  Address from which to start writing
-    wc_vector:	  in  cell_vector(0 to 77);			      --  cell array to be written in memory
-    wsize:	      in  integer range 0 to 15;		      --  size of writting burst
-    w_strobe:	    in	std_ulogic_vector(7 downto 0);	--  Strobe for the first part of the burst
-    w_strobe_last:in  std_ulogic_vector(7 downto 0);  --  Strobe for the last part of the burst
-    write_rq:	    in  std_ulogic;			                --  Input data is valid - request new write
+    waddress:                  in  std_ulogic_vector(31 downto 0); --  Address from which to start writing
+    wc_vector:                 in  cell_vector(0 to 77);			      --  cell array to be written in memory
+    wsize:                     in  integer range 0 to 15;		      --  size of writting burst
+    w_strobe:                  in	std_ulogic_vector(7 downto 0);	--  Strobe for the first part of the burst
+    w_strobe_last:             in  std_ulogic_vector(7 downto 0);  --  Strobe for the last part of the burst
+    write_rq:                  in  std_ulogic;			                --  Input data is valid - request new write
     -- Write response signals
-    done_writing:   out std_ulogic                    --  Write succesfull, ready for another
+    done_writing:              out std_ulogic                    --  Write succesfull, ready for another
   );
 end axi_register_master;
 
@@ -92,7 +92,7 @@ begin
               rstate <= request;
             end if;
           when request=>
-            if m_axi_s2m.arready <= '1' then
+            if m_axi_s2m.arready = '1' then
               m_axi_m2s.arvalid	<=  '0';
               m_axi_m2s.rready  <=  '1';
               rstate	        <=  read;
@@ -146,7 +146,7 @@ begin
               m_axi_m2s.awvalid	<=  '1';
               m_axi_m2s.awaddr	<=  waddress;
               m_axi_m2s.awlen	<=  std_ulogic_vector(to_unsigned(wsize, m_axi_m2s.awlen'length));
-              m_axi_m2s.awsize	<=  "011";
+              m_axi_m2s.awsize	<=  b"011";
               m_axi_m2s.awburst	<=  axi_burst_incr;
               m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
               wstate <= request;
@@ -161,7 +161,7 @@ begin
             end if;
           when write=>
             if m_axi_s2m.wready = '1' then            --  We wrote one.
-              m_axi_m2s.wstrb	<= "11111111";        --  For the other word we write everything (We may need a final strobe, we can compute it ourselves)
+              m_axi_m2s.wstrb	<= b"11111111";        --  For the other word we write everything (We may need a final strobe, we can compute it ourselves)
               write_cell_number := write_cell_number + tmp -1;	--  We refresh the number of cell written in memory  
               write_word_cpt    := write_word_cpt + 1;--  We've send another part of the burst
               tmp               :=  0;
