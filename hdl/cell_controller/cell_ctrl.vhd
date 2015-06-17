@@ -38,11 +38,9 @@ end entity cell_ctrl;
 
 architecture arc of cell_ctrl is
 
-  signal cells: window; -- the cells translated from the colors, 3 x N_CELL
-  signal new_cells: CELL_VECTOR(0 to N_CELL-1);
-  --signal -- new_data: std_logic := 'L';
-  signal state: CELL_CTRL_STATE := FREEZE;
-  signal run: std_ulogic := '0'; -- tells if the computation should start or freeze to cells
+  signal cells:           window; -- the cells translated from the colors, 3 x N_CELL
+  signal state:           CELL_CTRL_STATE := FREEZE;
+  signal run:             std_ulogic := '0'; -- tells if the computation should start or freeze to cells
 
 begin
 
