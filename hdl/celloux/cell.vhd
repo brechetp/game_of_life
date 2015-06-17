@@ -30,6 +30,7 @@ begin
       if rstn = '0' then -- the reset is set
         state_out <= DEAD;
       else
+	state_out <= DEAD;
         if run = '1' then -- we output something only if the run flag is set
           neighbour_count := three_count(N, NE, E, SE, S, SW, W, NW); -- we redefined the add operation
           case self is -- we check the old state

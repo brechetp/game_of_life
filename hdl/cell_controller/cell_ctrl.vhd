@@ -56,8 +56,8 @@ begin
       else
 	run <= '0';
         case state is -- we remember the seen signals. We only reset to freeze when we have READY_WRITING set
-
           when FREEZE => -- we wait for done signals during one CC
+	    state <= FREEZE;
             if DONE_WRITING = '1' and DONE_READING = '1' then -- we can read and write to registers
               state <= NORMAL;
               run <= '1'; -- starts the write_cell_vector computation
@@ -68,12 +68,14 @@ begin
             end if;
 
           when READ => -- we remember the DONE_READING signal
+	    state <= READ;
             if DONE_WRITING = '1' then
               state <= NORMAL;
               run <= '1';
             end if;
 
           when WRITE => -- DONE_WRITING has been read, wait for DONE_READING
+	    state <= WRITE;
             if DONE_READING = '1' then
               state <= NORMAL;
               run <= '1';
@@ -82,7 +84,6 @@ begin
           when NORMAL =>
             run <= '0'; -- prevent from overwriting the write_cell_vector
             state <= FREEZE; -- we have read and written memory, we wait for new DONE_READING and DONE_WRITING signals
-
         end case;
       end if;
     end if;
