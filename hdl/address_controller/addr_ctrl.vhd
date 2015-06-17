@@ -168,9 +168,15 @@ architecture window of addr_ctrl is
   signal write_strobe_last:		    std_ulogic_vector(0 to 7); -- a logical mask to write in memory
   signal read_offset:		    integer range 0 to 79; -- tell how many cells have been written to memory
   signal i:			    integer range -1 to WORLD_HEIGHT_MAX; -- line index
+  signal i_next:		    integer range -1 to WORLD_HEIGHT_MAX; -- line index
   signal j:			    integer range -1 to WORLD_WIDTH_MAX; -- column index
-  signal WORLD_HEIGHT: natural range 0 to WORLD_HEIGHT_MAX := WORLD_HEIGHT_MAX;
-  signal WORLD_WIDTH: natural range 0 to WORLD_WIDTH_MAX := WORLD_WIDTH_MAX;
+  signal j_next:		    integer range -1 to WORLD_WIDTH_MAX; -- column index
+  signal WORLD_HEIGHT:              natural range 0 to WORLD_HEIGHT_MAX := WORLD_HEIGHT_MAX;
+  signal WORLD_WIDTH:               natural range 0 to WORLD_WIDTH_MAX := WORLD_WIDTH_MAX;
+  signal first_time:                STD_ULOGIC;      -- set iif the column is computed for the first time
+  signal init:                      std_ulogic;
+  signal next_state:                ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
+  signal previous_state:            ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
 
 begin
 
@@ -246,18 +252,14 @@ begin
       end if; 
     end if;
   end process;
- 
+
   read_process: process(aclk)
-    variable first_time:              STD_ULOGIC := '1';      -- set iif the column is computed for the first time
     variable read_line:               NATURAL;                -- local copies of i,
     variable read_column:             NATURAL;                -- local copies of j
     variable offset_first_to_load:    unsigned(31 downto 0);  -- offset in the address space
     variable address_to_start_load:   unsigned(31 downto 0);  -- address to read in memory
     variable place_in_first_word:     unsigned(2 downto 0);   -- offset in the 64 bit space mapped by the address
     variable right_torus:             std_ulogic := '0';      -- logic test to check if we are with a right torus
-    variable next_state:              ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
-    variable previous_state:              ADDR_CTRL_READ_STATE;   -- Will store the state we'll go to upon completion of the curent request.
-    variable init:                    std_ulogic;
   begin
     if aclk = '1' then -- syncronous block
       if aresetn = '0' then -- reset
@@ -265,23 +267,21 @@ begin
 	i			<= 0;
         j			<= 0; -- up left corner
         read_state		<= r_idle;
-        first_time		:= '1';
+        first_time		<= '1';
 	read_request		<= '0';
 	read_column		:= 0;
 	read_line		:= 0;
       else -- no reset
         done_reading_cell_ctrl  <= '0'; -- the next cells are not valid
         read_request		<= '0'; -- default values
-	i			<= i;
-	j			<= j;
         case read_state is
           when R_IDLE => -- wait for the next generation computation to start
             -- initialisation state, we set variables as in reset
 	    read_state	<= R_IDLE;
             i		<= WORLD_HEIGHT - 1; -- we first need to fetch this line by convention
             j		<= 0;
-            first_time  := '1';
-            init        := '1';
+            first_time  <= '1';
+            init        <= '1';
             if computation_start = '1' then -- the life awakens (new generaion computation)
               read_state <= R_START_LINE; -- start of a column computation
             end if;
@@ -310,13 +310,11 @@ begin
             read_offset             <= 0;
             rsize                   <= 0; -- set the read size 
             if (ready_reading_cell_ctrl = '1') or (init = '1') then
-              init                  :=  '0';
+              init                  <=  '0';
               read_request          <= '1';
-              next_state            := R_INLINE;
-              previous_state        := read_state;
+              next_state            <= R_INLINE;
+              previous_state        <= read_state;
               read_state            <= R_WAIT;
-	    else
-	      init		    := '0';
             end if;
 
           when R_POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
@@ -337,7 +335,7 @@ begin
                 read_state <= R_INLINE;
                 i <= i+1;
               end if;
-              first_time := not first_time;
+              first_time <= not first_time;
             else
               if i = WORLD_HEIGHT - 1 then
                 i <= 0;
@@ -373,8 +371,8 @@ begin
               end if;
             end loop; -- end of the read_strobe init
             if ready_reading_cell_ctrl = '1' or (j = 0) then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
-              next_state	:= R_POSTLOAD; -- mode right torus
-              previous_state	:= read_state;
+              next_state	<= R_POSTLOAD; -- mode right torus
+              previous_state	<= read_state;
               read_state	<= R_WAIT;
               rsize		<= 9; -- number of cells to fetch inline
               read_request <= '1'; -- request an address read
@@ -382,15 +380,14 @@ begin
                 if i = 1 then -- possible end of column
                   if first_time = '1' then -- we need to start the writing of this new column
                     i <= i + 1;
-		    j <= j;
                   else
-                    i <= WORLD_HEIGHT - 1; -- reset the line index
-                    j <= j + N_CELL - 2;
-                    next_state := R_INLINE;
-                    previous_state          := read_state;
-                    read_state <= R_WAIT;
+                    i               <= WORLD_HEIGHT - 1; -- reset the line index
+                    j               <= j + N_CELL - 2;
+                    next_state      <= R_INLINE;
+                    previous_state  <= read_state;
+                    read_state      <= R_WAIT;
                   end if;
-                  first_time := not first_time; -- reset / unset of first_time check
+                  first_time <= not first_time; -- reset / unset of first_time check
                 else -- i/= 1, we stay in the current column
                   if i = WORLD_HEIGHT - 1 then -- need to roll up
                     i <= 0;
@@ -399,11 +396,9 @@ begin
                   end if;
                 end if;
               else
-		i <= i;
-		j <= j;
-                next_state := R_POSTLOAD;
-                previous_state          := read_state;
-                read_state <= R_WAIT;
+                next_state      <= R_POSTLOAD;
+                previous_state  <= read_state;
+                read_state      <= R_WAIT;
               end if;
             end if;
           when R_WAIT => -- we wait for the current query completion before moving on

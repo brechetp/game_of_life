@@ -50,21 +50,19 @@ begin
     if clk = '1' then
       if rstn = '0' then
         state <= FREEZE;
+        run <= '0';
       else
+        run <= '0';
         case state is -- we remember the seen signals. We only reset to freeze when we have READY_WRITING set
 
           when FREEZE => -- we wait for done signals during one CC
             if DONE_WRITING = '1' and DONE_READING = '1' then -- we can read and write to registers
               state <= NORMAL;
               run <= '1'; -- starts the write_cell_vector computation
-            else
-              if DONE_READING = '1' then -- to remember the DONE_READING signal
-                state <= READ;
-              else
-                if DONE_WRITING = '1' then -- to remember the DONE_WRITING signal
-                  state <= WRITE;
-                end if;
-              end if;
+            elsif DONE_READING = '1' then -- to remember the DONE_READING signal
+              state <= READ;
+            elsif DONE_WRITING = '1' then -- to remember the DONE_WRITING signal
+              state <= WRITE;
             end if;
 
           when READ => -- we remember the DONE_READING signal
@@ -80,7 +78,6 @@ begin
             end if;
 
           when NORMAL =>
-            run <= '0'; -- prevent from overwriting the write_cell_vector
             state <= FREEZE; -- we have read and written memory, we wait for new DONE_READING and DONE_WRITING signals
 
         end case;
@@ -99,8 +96,8 @@ begin
         READY_READING <= '0'; -- unless we say so, the memory is not ready to be overwritten
         if state = NORMAL then -- we can't do anything unless the past generation has been written to memory
           for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
-            cells(0,i) <= cells(1,i);
-            cells(1,i)  <= (read_cell_vector(i)); -- for the next computation
+            cells(0,i)    <= cells(1,i);
+            cells(1,i)    <= (read_cell_vector(i)); -- for the next computation
           end loop;
           READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written)
         end if;
