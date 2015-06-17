@@ -47,7 +47,7 @@ begin
   --
   state_process: process(clk) -- sets the cell_ctrl state
   begin
-    if clk = '1' then
+    if rising_edge(clk) then
       if rstn = '0' then
         state <= FREEZE;
         run <= '0';
@@ -87,7 +87,7 @@ begin
   
   input: process(clk)
   begin
-    if clk = '1' then
+    if rising_edge(clk) then
       if rstn = '0' then
         cells <= ( others => (others => DEAD));
         READY_READING <= '0';
@@ -127,7 +127,7 @@ begin
 
   output: process(clk)
   begin
-    if clk = '1' then
+    if rising_edge(clk) then
       if rstn = '0' then
         READY_WRITING <= '0';
       else

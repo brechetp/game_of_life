@@ -94,6 +94,7 @@ begin
         rstate <= idle;
         m_axi_m2s.arvalid   <=  '0';
         m_axi_m2s.rready    <=  '0';
+        rc_vector           <= (others => DEAD);
       else
         done_reading	    <= '0';
 	m_axi_m2s.arvalid   <=  '0';

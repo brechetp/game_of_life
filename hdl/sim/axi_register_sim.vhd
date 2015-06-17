@@ -14,8 +14,7 @@ entity axi_register_sim is
   port(
 	start: out std_ulogic;
 	height,width: out std_ulogic_vector(15 downto 0);
-	color: out std_ulogic_vector(31 downto 0);
-	widthx: out natural range 0 to 3
+	color: out std_ulogic_vector(31 downto 0)
   );
 end entity axi_register_sim;
 
@@ -93,9 +92,9 @@ architecture sim of axi_register_sim is
 	width => width,
 	start => start,
 	color => color,
+
 	s_axi_m2s => s_axi_m2s,
-	s_axi_s2m => s_axi_s2m,
-	widthx => widthx
+	s_axi_s2m => s_axi_s2m
   );
 
 end architecture sim;

@@ -18,7 +18,7 @@ end entity cell;
   
 
 
-  architecture syn of cell is
+architecture syn of cell is
 
   signal mem_state: CELL_STATE;
 
@@ -26,18 +26,18 @@ begin
 
   flip_flop: process(clk)
   begin
-    if clk = '1' then
+    if rising_edge(clk) then
       if rstn = '0' then
         state_out <= DEAD;
       else
         state_out <= mem_state;
       end if;
-    end if;
+    end if; 
   end process;
 
 
 
-  asynchronous_process: process(run)
+  asynchronous_process: process(run, self, N, NE, E, SE, S, SW, W, NW)
     variable neighbour_count: BIT_COUNT; -- gives the count of neighbours
   begin
     if run = '1' then -- on rising edge, we assume neighbors are ready
@@ -70,6 +70,8 @@ begin
   
 
 end architecture syn;
+
+
 
 
 
