@@ -105,7 +105,7 @@ begin
             end if;
           when request=>
 	    m_axi_m2s.arvalid	<=  '1';
-	    m_axi_m2s.rreasy	<=  '0';
+	    m_axi_m2s.rready	<=  '0';
             if m_axi_s2m.arready = '1' then
               m_axi_m2s.arvalid	<=  '0';
               m_axi_m2s.rready  <=  '1';
