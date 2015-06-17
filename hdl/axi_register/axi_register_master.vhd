@@ -99,11 +99,13 @@ begin
 	m_axi_m2s.arvalid   <=  '0';
         case rstate is
           when idle=>
+	    rstate <= idle;
             if read_rq = '1' then
               m_axi_m2s.arvalid	<=  '1';
               rstate <= request;
             end if;
           when request=>
+	    rstate <= request;
 	    m_axi_m2s.arvalid	<=  '1';
 	    m_axi_m2s.rready	<=  '0';
             if m_axi_s2m.arready = '1' then
@@ -114,6 +116,7 @@ begin
               read_word_cpt	:=  0;
             end if;
           when read=>
+	    rstate <= read;
 	    m_axi_m2s.rready  <=  '1';
             if m_axi_s2m.rvalid = '1' then	--  Slave is sending us the data
               for i in 0 to 7 loop
@@ -158,12 +161,14 @@ begin
         m_axi_m2s.wstrb	    <=  (others => '1');
         case wstate is
           when idle=>
+	    wstate <= idle;
             if write_rq = '1' then
               m_axi_m2s.awvalid	<=  '1';
               m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
               wstate <= request;
             end if;
           when request=>
+	    wstate <= request;
 	    m_axi_m2s.awvalid	<=  '1';
             if m_axi_s2m.awready <= '1' then
               m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
@@ -173,6 +178,7 @@ begin
               write_word_cpt	:=  0;
             end if;
           when write=>
+	    wstate <= write;
 	    m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
             if m_axi_s2m.wready = '1' then            --  We wrote one.
               write_cell_number := write_cell_number + tmp -1;	--  We refresh the number of cell written in memory  
@@ -182,6 +188,8 @@ begin
                 if ((w_strobe(i) = '1') or (write_word_cpt /= 0)) and (write_cell_number + tmp < 78) then	--  First burst call, will be written, not overflowing the cell_vector 
                   m_axi_m2s.wdata(8*i+7 downto 8*i) <= state2color(wc_vector(write_cell_number + tmp));	--  Put the cell in a space that will be written
                   tmp := tmp +1;                          							--  Assert that we've written another cell.
+		else
+		  m_axi_m2s.wdata(8*i+7 downto 8*i) <= (others => '0');
                 end if;
               end loop;
               if write_word_cpt = wsize-1 then       --	The next one will be the last

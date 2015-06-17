@@ -55,6 +55,7 @@ begin
 	run <= '0';
       else
 	run <= '0';
+	state <= FREEZE;
         case state is -- we remember the seen signals. We only reset to freeze when we have READY_WRITING set
           when FREEZE => -- we wait for done signals during one CC
 	    state <= FREEZE;
@@ -97,7 +98,6 @@ begin
         READY_READING <= '0';
         -- new_data <= 'L';
       else
-        READY_READING <= '0'; -- unless we say so, the memory is not ready to be overwritten
         if state = NORMAL then -- we can't do anything unless the past generation has been written to memory
           for i in 0 to ( N_CELL-1 ) loop -- we slide the widow towards the south
             cells(0,i)	<= cells(1,i);
@@ -105,6 +105,7 @@ begin
           end loop;
           READY_READING <= '1'; -- tells the mem the read_cell_vector has been read (it can be written)
 	else
+	  READY_READING <= '0'; -- unless we say so, the memory is not ready to be overwritten
 	  cells <= cells;
         end if;
       end if; -- end of the reset block
