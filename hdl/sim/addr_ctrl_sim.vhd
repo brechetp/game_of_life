@@ -226,21 +226,12 @@ begin
     -- Write response channel
     m_axi_bvalid                    => m_axi_bvalid,
     m_axi_bid                       => m_axi_bid,
-    m_axi_bresp                     => m_axi_bresp,
-
-    testing_rc_vector               => read_vector_from_addr_ctrl,
-    testing_wc_vector               => write_vector_from_addr_ctrl,
-    testing_width                   => test_width,
-    testing_height                  => test_height,
-    testing_write_state             => addr_write_state,
-    testing_read_state              => addr_read_state,
-    testing_computation_start       => computation_start,
-    testing_global_start            => global_start
+    m_axi_bresp                     => m_axi_bresp
   );
 
   clk_gen: process
   begin
-    aresetn <= '1' after 20 ns;
+    aresetn <= '1' after 40 ns;
     aclk <= '1';
     wait for 10 ns;
     aclk <= '0';
@@ -270,12 +261,12 @@ begin
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
           s0_axi_awaddr     <= "000000000000"; -- height
-          s0_axi_wdata      <= std_logic_vector(to_unsigned(800, 32)); -- data height
+          s0_axi_wdata      <= std_logic_vector(to_unsigned(10, 32)); -- data height
         elsif cpt = 10 then
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
           s0_axi_awaddr     <= "000000000100"; -- width
-          s0_axi_wdata      <= std_logic_vector(to_unsigned(1200, 32)); -- data height
+          s0_axi_wdata      <= std_logic_vector(to_unsigned(160, 32)); -- data height
         elsif cpt = 15 then
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
@@ -287,7 +278,7 @@ begin
           s0_axi_awaddr     <= "000000001000"; --start
           s0_axi_wdata      <= "00000000000000000000000000000001";
         end if;
-        if cpt = 200 then
+        if cpt = 100000 then
           stop_sim <= '1';
         end if;
       end if;

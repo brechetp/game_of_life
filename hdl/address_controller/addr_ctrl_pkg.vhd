@@ -10,7 +10,7 @@ use global_lib.numeric_std.all;
 
 package addr_ctrl_pkg is 
 
-  type ADDR_CTRL_READ_STATE is (R_IDLE, R_START_LINE, R_INLINE, R_PRELOAD, R_POSTLOAD, R_WAIT); -- the read state
+  type ADDR_CTRL_READ_STATE is (R_IDLE, R_INLINE, R_PRELOAD, R_POSTLOAD, R_WAIT); -- the read state
   type ADDR_CTRL_WRITE_STATE is (W_IDLE, W_START, W_WAIT); -- the write state (W_IDLE when waiting for a new generation to compute)
 
   constant W_BASE_ADDRESS: unsigned (31 downto 0):= (others => '0');

@@ -8,18 +8,23 @@ int main(int argc, char** argv)
   int width, height;
   FILE* fid;
   char line[WORLD_WIDTH_MAX];
-  int i, read; 
-  size_t  len;
+  int i, read;
+  size_t len;
   char* addresse;
   int count;
-  int* start_addr, *width_addr, *height_addr;
+  int* start_addr, *width_addr, *height_addr, *write_addr, *read_addr;
+  int write_base_addr, read_base_addr;
   char current_char;
 
   addresse = (char *)0x47824672;
 
+
   height_addr = (int *)0x1342fe5;
-  width_addr = height_addr + 1; 
-  start_addr = width_addr + 2;
+  width_addr  = height_addr + 1;
+  start_addr  = width_addr + 2;
+  read_addr   = start_addr + 1;
+  write_addr  = read_addr + 1;
+
   
   if (argc != 4)
   {
@@ -27,8 +32,12 @@ int main(int argc, char** argv)
     exit(1);
   }
 
+
   width = MIN(atoi(argv[2]), WORLD_WIDTH_MAX);
   height = MIN(atoi(argv[3]), WORLD_HEIGHT_MAX);
+
+  read_base_addr = 0x50000000;
+  write_base_addr = read_base_addr + (width * height) * 8;
 
   if ((fid = fopen(argv[1], "r")) == NULL)
   {
@@ -69,8 +78,11 @@ int main(int argc, char** argv)
   }
 
   *(height_addr) = height;
-  *(width_addr) = width;
-  *(start_addr) = 1;
+  *(width_addr)  = width;
+  *(write_addr)  = write_base_addr;
+  *(read_addr) = read_base_addr;
+
+  *(start_addr)  = 1; /* the life awakens */
 
 
 }

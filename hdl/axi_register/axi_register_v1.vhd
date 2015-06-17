@@ -23,7 +23,7 @@ use axi_lib.axi_pkg.all;
 
 entity axi_register_v1 is
   generic(na1: natural := 30;   -- Number of significant bits in S_AXI addresses (12 bits => 4kB address space)
-          nr1: natural := 4);   -- Number of 32-bits registers in S_AXI address space; addresses are 0 to 4*(nr1-1)
+          nr1: natural := 6);   -- Number of 32-bits registers in S_AXI address space; addresses are 0 to 4*(nr1-1)
   port(
     aclk:       in std_ulogic;
     aresetn:    in std_ulogic;
@@ -35,8 +35,9 @@ entity axi_register_v1 is
     width:         out std_ulogic_vector(15 downto 0); 	-- Width of the field
     start:	   out std_ulogic;			-- Start signal for the simulation
     color:	   out std_ulogic_vector(31 downto 0); 	-- Color scale (grey scale)
-    widthx:	   out natural range 0 to 3
-
+    r_base_address:out unsigned(31 downto 0);
+    w_base_address:out unsigned(31 downto 0);
+    switch:        in std_ulogic
   );
 end entity axi_register_v1;
 
@@ -52,7 +53,46 @@ architecture rtl of axi_register_v1 is
   type reg_array is array(0 to nr1 - 1) of reg_type;
   signal regs: reg_array;
 
+  type addr_state_type is (NORMAL, INVERT);
+  signal switch_state: addr_state_type;
+
+  signal r_base_address_local:unsigned(31 downto 0);
+  signal w_base_address_local:unsigned(31 downto 0);
 begin 
+
+  addr_output_pr: process(switch_state)
+    variable temp: unsigned(31 downto 0);
+  begin
+    case switch_state is
+      when NORMAL =>
+        r_base_address <= r_base_address_local;
+        w_base_address <= w_base_address_local;
+      when INVERT =>
+        r_base_address <= w_base_address_local;
+        w_base_address <= r_base_address_local;
+    end case;
+  end process;
+
+  addr_state_pr: process(aclk)
+
+  begin
+    if rising_edge(aclk) then
+      if aresetn = '0' then
+        switch_state <= NORMAL;
+      else
+        case switch_state is
+          when NORMAL =>
+            if switch = '1' then
+              switch_state <= INVERT;
+            end if;
+          when INVERT =>
+            if switch = '1' then
+              switch_state <= NORMAL;
+            end if;
+        end case;
+      end if;
+    end if;
+  end process;
 
   regs_pr: process(aclk)
     -- idle: waiting for AXI master requests: when receiving write address and data valid (higher priority than read), perform the write, assert write address
@@ -74,12 +114,13 @@ begin
         width <= "0000001010000000";-- Default width is 1280
         start <= '0'; -- No start signal at the beginning
         color <= (others => '0'); -- The color scale needs to be set
+        r_base_address_local <= (others => '0');
+        w_base_address_local <= (others => '0');
       else
 
         -- Addresses ranges
         widx := to_integer(unsigned(s_axi_m2s.awaddr(l2nr1 + 1 downto 2)));
         ridx := to_integer(unsigned(s_axi_m2s.araddr(l2nr1 + 1 downto 2)));
-	widthx <= widx;
         -- S_AXI write and read
         case state is
           when idle =>
@@ -94,6 +135,10 @@ begin
                 width <= s_axi_m2s.wdata(15 downto 0);
               elsif widx = 3 then -- Change the color scale before the initialization
                 color <= s_axi_m2s.wdata(31 downto 0);
+              elsif widx = 4 then -- Change the r_base_address
+                r_base_address_local <= unsigned(s_axi_m2s.wdata(31 downto 0));
+              elsif widx = 5 then -- Change the w_base_address
+                w_base_address_local <= unsigned(s_axi_m2s.wdata(31 downto 0));
               end if;
               s_axi_s2m.awready <= '1';
               s_axi_s2m.wready <= '1';
