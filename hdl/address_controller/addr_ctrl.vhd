@@ -261,12 +261,19 @@ begin
   begin
     if aclk = '1' then -- syncronous block
       if aresetn = '0' then -- reset
-        j <= 0; -- up left corner
-        read_state <= r_idle;
-        first_time := '1';
+	done_reading_cell_ctrl	<= '0';
+	i			<= 0;
+        j			<= 0; -- up left corner
+        read_state		<= r_idle;
+        first_time		:= '1';
+	read_request		<= '0';
+	read_column		:= 0;
+	read_line		:= 0;
       else -- no reset
         done_reading_cell_ctrl  <= '0'; -- the next cells are not valid
-        read_request <= '0'; -- default values
+        read_request		<= '0'; -- default values
+	i			<= i;
+	j			<= j;
         case read_state is
           when R_IDLE => -- wait for the next generation computation to start
             -- initialisation state, we set variables as in reset
@@ -346,7 +353,7 @@ begin
             if j > 0 then -- no torus effect
               read_column	    := j-1; -- we need to fetch the (i, j-1) cell
 	      read_offset	    <= 0;
-            elsif j = 0 then -- left torus, the leftmost cell has already been fetched
+            else -- left torus, the leftmost cell has already been fetched
               read_column	    := j;
               read_offset	    <= 1;
             end if;
@@ -375,6 +382,7 @@ begin
                 if i = 1 then -- possible end of column
                   if first_time = '1' then -- we need to start the writing of this new column
                     i <= i + 1;
+		    j <= j;
                   else
                     i <= WORLD_HEIGHT - 1; -- reset the line index
                     j <= j + N_CELL - 2;
@@ -391,6 +399,8 @@ begin
                   end if;
                 end if;
               else
+		i <= i;
+		j <= j;
                 next_state := R_POSTLOAD;
                 previous_state          := read_state;
                 read_state <= R_WAIT;
@@ -398,6 +408,7 @@ begin
             end if;
           when R_WAIT => -- we wait for the current query completion before moving on
 	    read_state	<= R_WAIT;
+	    raddress	<= raddress;
             if done_reading = '1' then
               read_state  <= next_state; -- we load the saved nex_state;
               if (previous_state = R_POSTLOAD) or (previous_state = R_INLINE and next_state /= R_POSTLOAD) then -- once the whole N_CELL have been fetched
@@ -433,68 +444,74 @@ begin
         wsize                 <= 0;
         waddress              <= (others => '0');
         write_strobe          <= (others => '0');
-        write_strobe_last    <= (others => '0');
+        write_strobe_last     <= (others => '0');
         cpt                   := -2;
         -- ...
       else
-        write_request <= '0';                     --  Raised when something is to be written
-        done_writing_cell_ctrl <= '0';            --  Will be raised one clk cycle to notify the cell ctrl that the cells have been written 
+        write_request <= '0';			    --  Raised when something is to be written
+        done_writing_cell_ctrl <= '0';		    --  Will be raised one clk cycle to notify the cell ctrl that the cells have been written 
+        write_column := j;			    --  We write on the read column
+        write_line := cpt;		            --  We write the "middle" line
         case write_state is
-          when W_IDLE =>                          --  We wait for a new generation to be written
+          when W_IDLE =>			    --  We wait for a new generation to be written
+	    write_state <= W_IDLE;
             done_writing_cell_ctrl <= '1';
-            if ready_writing_cell_ctrl = '1' then --  Driven by the cell ctrl. Indicate that a value to good to be written
+            if ready_writing_cell_ctrl = '1' then   --  Driven by the cell ctrl. Indicate that a value to good to be written
               cpt := cpt+1;
               if cpt =0 then
-                write_state <= W_START;           --  Basically we will write at line cpt
+                write_state <= W_START;		    --  Basically we will write at line cpt
               end if;  
             end if;
-          when W_START =>                         --  We are instructed to compute waddress and to ask for writing
-            if ready_writing_cell_ctrl = '1' then --  The new generation is ready
-              write_column := j;                  --  We write on the read column
-              write_line := cpt;                  --  We write the "middle" line
 
-              offset_first_to_write := coordinates2offset(write_line, write_column, WORLD_WIDTH);
-              address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
-              place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
-              if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
-                wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(15 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
+          when W_START =>			    --  We are instructed to compute waddress and to ask for writing
+	    write_state <= W_START;
+            offset_first_to_write := coordinates2offset(write_line, write_column, WORLD_WIDTH);
+            address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
+            place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
+	    wsize <= 8;
+            if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
+              wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(15 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
                 -- We don't want overflow on other addresses
-              elsif place_in_first_word <= "001" then
-                wsize <= 8; -- we don't overflow on trailing 64-bit words
-              elsif  place_in_first_word > "001" then
-                wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
-              end if;
-              for i in 0 to 7 loop
-                if i >= to_integer(place_in_first_word) then
-                  write_strobe(i) <= '1';
-                else
-                  write_strobe(i) <= '0';
-                end if;
-              end loop;
-              if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then -- TODO See this condition again 
-                offset_last_to_write := coordinates2offset(write_line, WORLD_WIDTH - 1, WORLD_WIDTH);  -- Right torus, the last is the border cell
+            elsif place_in_first_word <= "001" then
+              wsize <= 8; -- we don't overflow on trailing 64-bit words
+            elsif  place_in_first_word > "001" then
+              wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
+            end if;
+	    for index in 0 to 7 loop
+              if i >= to_integer(place_in_first_word) then
+                write_strobe(index) <= '1';
               else
-                offset_last_to_write := coordinates2offset(write_line, write_column + 77, WORLD_WIDTH);-- No torus, the last is the first cell + 78
+                write_strobe(index) <= '0';
               end if;
-              place_in_last_word := offset_last_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
-              for i in 0 to 7 loop
-                if i <= to_integer(place_in_last_word) then
-                  write_strobe_last(i) <= '1';
-                else
-                  write_strobe_last(i) <= '0';
-                end if;
-              end loop;
-              waddress <= std_ulogic_vector(address_to_write);
+            end loop;
+            if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then -- TODO See this condition again 
+              offset_last_to_write := coordinates2offset(write_line, WORLD_WIDTH - 1, WORLD_WIDTH);  -- Right torus, the last is the border cell
+            else
+              offset_last_to_write := coordinates2offset(write_line, write_column + 77, WORLD_WIDTH);-- No torus, the last is the first cell + 78
+            end if;
+            place_in_last_word := offset_last_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
+            for index in 0 to 7 loop
+              if index <= to_integer(place_in_last_word) then
+                write_strobe_last(index) <= '1';
+              else
+                write_strobe_last(index) <= '0';
+              end if;
+            end loop;
+            waddress <= std_ulogic_vector(address_to_write);
+            if ready_writing_cell_ctrl = '1' then   --  The new generation is ready
               write_request <= '1';
               write_state <= W_WAIT;
             end if;                     --  End of the if ready to write block
+
           when W_WAIT =>                --  We launched a request and are waiting for it to finish
+	    write_state <= W_WAIT;
             if done_writing = '1' then  --  The request is finished
               cpt := cpt + 1;            --  The next line to write will be cpt+1
               write_state <= W_START;
-              -- TODO add test finished column, go to W_START and reset cpt
+              -- Test finished column, go to W_IDLE and reset cpt
               if (write_line = WORLD_HEIGHT - 1) then
                 write_state <= W_IDLE;
+		cpt := -2;
               end if;
               done_writing_cell_ctrl <= '1'; --  Notify that the cells have been written in memory
             end if;
