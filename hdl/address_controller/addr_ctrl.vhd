@@ -230,6 +230,7 @@ begin
       if aresetn = '0' then -- reset
         count := 0;
       elsif global_start = '1' then
+        computation_start <= '0';
         count := count +1;
         if count = 100000 then
           computation_start <= '1';
@@ -301,12 +302,14 @@ begin
             raddress                <= std_ulogic_vector(address_to_start_load); -- since we are in the case ready_reading we can change the read_address
             read_offset             <= 0;
             rsize                   <= 0; -- set the read size 
-            if (ready_reading_cell_ctrl = '1') or (init = '1') then --TODO think about the initialisation. DONE
-              init                    :=  '0';
-              read_request            <= '1';
-              next_state              := R_INLINE;
-              previous_state          := read_state;
-              read_state              <= R_WAIT;
+            if (ready_reading_cell_ctrl = '1') or (init = '1') then
+              init                  :=  '0';
+              read_request          <= '1';
+              next_state            := R_INLINE;
+              previous_state        := read_state;
+              read_state            <= R_WAIT;
+	    else
+	      init		    := '0';
             end if;
 
           when R_POSTLOAD => -- we need to read one cell (i, 0). The rest has already been read
