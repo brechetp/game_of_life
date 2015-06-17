@@ -73,6 +73,18 @@ begin
   m_axi_m2s.wid	    <= (others => '0');
   m_axi_m2s.awcache <= (others => '0');
 
+  m_axi_m2s.arsize  <=  "011";
+  m_axi_m2s.arburst <=  axi_burst_incr;
+  m_axi_m2s.araddr  <=  raddress;
+  m_axi_m2s.arlen   <=  std_ulogic_vector(to_unsigned(rsize, m_axi_m2s.arlen'length));
+
+  m_axi_m2s.bready  <= '1'; --  We are always ready to receive responces
+  m_axi_m2s.wvalid  <= '1'; --  Our write data is always valid 
+  m_axi_m2s.awaddr  <=  waddress;
+  m_axi_m2s.awlen   <=  std_ulogic_vector(to_unsigned(wsize, m_axi_m2s.awlen'length));
+  m_axi_m2s.awsize  <=  "011";
+  m_axi_m2s.awburst <=  axi_burst_incr;
+
   read_pr: process(aclk)
     variable read_cell_number:integer range 0 to 80;
     variable read_word_cpt:   integer range 0 to 16;  
@@ -81,34 +93,31 @@ begin
       if aresetn = '0' then
         rstate <= idle;
         m_axi_m2s.arvalid   <=  '0';
-        m_axi_m2s.araddr    <=  (others => '0');
-        m_axi_m2s.arlen	    <=  (others => '0');
-        m_axi_m2s.arsize    <=  "011";
-        m_axi_m2s.arburst   <=  axi_burst_incr;
         m_axi_m2s.rready    <=  '0';
       else
-        done_reading <= '0';
+        done_reading	    <= '0';
+	m_axi_m2s.arvalid   <=  '0';
         case rstate is
           when idle=>
             if read_rq = '1' then
               m_axi_m2s.arvalid	<=  '1';
-              m_axi_m2s.araddr	<=  raddress;
-              m_axi_m2s.arlen	<=  std_ulogic_vector(to_unsigned(rsize, m_axi_m2s.arlen'length));
-              m_axi_m2s.arsize	<=  "011";
               rstate <= request;
             end if;
           when request=>
+	    m_axi_m2s.arvalid	<=  '1';
+	    m_axi_m2s.rreasy	<=  '0';
             if m_axi_s2m.arready = '1' then
               m_axi_m2s.arvalid	<=  '0';
               m_axi_m2s.rready  <=  '1';
               rstate	        <=  read;
               read_cell_number  :=  0;		--  Reset cpt value for next read.
-              read_word_cpt	    :=  0;
+              read_word_cpt	:=  0;
             end if;
           when read=>
+	    m_axi_m2s.rready  <=  '1';
             if m_axi_s2m.rvalid = '1' then	--  Slave is sending us the data
               for i in 0 to 7 loop
-                if ((r_strobe(i) = '1') or (read_word_cpt /= 0)) and (r_offset + read_cell_number < 80) then
+                if ((r_strobe(i) = '1') or (read_word_cpt /= 0)) and ((r_offset + read_cell_number) < 80) then
                   rc_vector(r_offset+read_cell_number) <= color2state(m_axi_s2m.rdata(8*i+7 downto 8*i));	--  Store the cell
                   read_cell_number := read_cell_number + 1;						--  Assert that we've just loaded a new cell
                 end if;
@@ -135,8 +144,7 @@ begin
         write_word_cpt	    :=	0;
         write_cell_number   :=	0;
         wstate               <= idle;
-        m_axi_m2s.bready  <= '1'; --  We are always ready to receive responces
-        m_axi_m2s.wvalid  <= '1'; --  Our write data is always valid 
+	done_writing	    <=	'0';
       else
         done_writing <= '0';
         tmp          :=  0;
@@ -146,27 +154,27 @@ begin
             tmp := tmp +1;                          							--  Assert that we've written another cell.
           end if;
         end loop;
+        m_axi_m2s.awvalid   <=  '0';
+        m_axi_m2s.wstrb	    <=  (others => '1');
         case wstate is
           when idle=>
             if write_rq = '1' then
               m_axi_m2s.awvalid	<=  '1';
-              m_axi_m2s.awaddr	<=  waddress;
-              m_axi_m2s.awlen	<=  std_ulogic_vector(to_unsigned(wsize, m_axi_m2s.awlen'length));
-              m_axi_m2s.awsize	<=  "011";
-              m_axi_m2s.awburst	<=  axi_burst_incr;
               m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
               wstate <= request;
             end if;
           when request=>
+	    m_axi_m2s.awvalid	<=  '1';
             if m_axi_s2m.awready <= '1' then
+              m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
               m_axi_m2s.awvalid	<=  '0';
               wstate	    	<=  write;
               write_cell_number	:=  0;		--  Reset cpt value for next write.
               write_word_cpt	:=  0;
             end if;
           when write=>
+	    m_axi_m2s.wstrb	<=  w_strobe;	--  Strobe for the first word
             if m_axi_s2m.wready = '1' then            --  We wrote one.
-              m_axi_m2s.wstrb	<= b"11111111";        --  For the other word we write everything (We may need a final strobe, we can compute it ourselves)
               write_cell_number := write_cell_number + tmp -1;	--  We refresh the number of cell written in memory  
               write_word_cpt    := write_word_cpt + 1;--  We've send another part of the burst
               tmp               :=  0;
@@ -177,10 +185,13 @@ begin
                 end if;
               end loop;
               if write_word_cpt = wsize-1 then       --	The next one will be the last
-                 m_axi_m2s.wlast  <=  '1';       --	We assert wlast to notify the slave
-                 m_axi_m2s.wstrb  <=  w_strobe_last;  
-                 done_writing	  <=  '1';
-                 wstate	    	  <=  idle;        --	We go back to idle state to wait for next request
+                m_axi_m2s.wlast <=  '1';       --	We assert wlast to notify the slave
+                m_axi_m2s.wstrb <=  w_strobe_last;  
+                done_writing	<=  '1';
+                wstate	    	<=  idle;        --	We go back to idle state to wait for next request
+	      else
+	        m_axi_m2s.wlast <=  '0';      
+		m_axi_m2s.wstrb	<= b"11111111";        --  For the other word we write everything 
               end if;
             end if;
         end case;
