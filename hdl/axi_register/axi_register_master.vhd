@@ -176,6 +176,9 @@ begin
               wstate	    	<=  write;
               write_cell_number	:=  0;		--  Reset cpt value for next write.
               write_word_cpt	:=  0;
+              if wsize = 0 then 
+                m_axi_m2s.wlast <= '1';
+              end if;
             end if;
           when write=>
             if m_axi_s2m.wready = '1' then            --  We wrote one.
@@ -193,8 +196,11 @@ begin
               if write_word_cpt = wsize-1 then       --	The next one will be the last
                 m_axi_m2s.wlast <=  '1';       --	We assert wlast to notify the slave
                 m_axi_m2s.wstrb <=  w_strobe_last;  
-                done_writing	  <=  '1';
-                wstate	    	  <=  idle;        --	We go back to idle state to wait for next request
+                done_writing	<=  '1';
+                wstate	    	<=  idle;        --	We go back to idle state to wait for next request
+              elsif wsize = 0 then
+                done_writing    <= '1';
+                wstate          <= idle;
               end if;
             end if;
         end case;

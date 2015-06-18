@@ -238,12 +238,10 @@ begin
         switch <= '0';
         computation_start <= '0';
         count := count +1;
-        if count = 70 then
+        if count = 500 then
           switch <= '1';
           computation_start <= '1';
-        elsif count > 100000 then -- TESTING Will only raise it once
-          count := 100001;
-        elsif count = 200000 then
+        elsif count = 1000 then
           computation_start <= '1';
           switch <= '1';
           count := 0;
@@ -321,7 +319,7 @@ begin
             read_strobe(to_integer(place_in_first_word)) <= '1'; -- mask to keep the desired cell in the 8 mapped by the 64 bit word
             read_request	    <= '1'; -- we request a read
             raddress		    <= std_ulogic_vector(address_to_start_load);
-            if i = 1 then
+            if i = 0 then
               if first_time ='0' then
                 next_state <= R_IDLE;
                 read_state <= R_WAIT; -- no need to update j, we are already in the last column
@@ -383,7 +381,7 @@ begin
               raddress		    <= std_ulogic_vector(address_to_start_load); -- address to read
               read_request <= '1'; -- request an address read
               if right_torus = '0' then
-                if i = 1 then -- possible end of column
+                if i = 0 then -- possible end of column
                   if first_time = '1' then -- we need to start the writing of this new column
                     i <= i + 1;
                   else
@@ -444,8 +442,6 @@ begin
       else
         write_request <= '0';			    --  Raised when something is to be written
         done_writing_cell_ctrl <= '0';		    --  Will be raised one clk cycle to notify the cell ctrl that the cells have been written 
-        write_column  := j;			    --  We write on the read column
-        write_line    := cpt;		            --  We write the "middle" line
         case write_state is
           when W_IDLE =>			    --  We wait for a new generation to be written
             done_writing_cell_ctrl <= '1';
@@ -457,6 +453,8 @@ begin
             end if;
 
           when W_START =>			    --  We are instructed to compute waddress and to ask for writing
+            write_column  := j;			    --  We write on the read column
+            write_line    := cpt;		            --  We write the "middle" line
             offset_first_to_write := coordinates2offset(write_line, write_column, WORLD_WIDTH);
             address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
             place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
@@ -469,8 +467,8 @@ begin
             elsif  place_in_first_word > "001" then
               wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
             end if;
-	          for index in 0 to 7 loop
-              if i >= to_integer(place_in_first_word) then
+            for index in 0 to 7 loop
+              if index >= to_integer(place_in_first_word) then
                 write_strobe(index) <= '1';
               else
                 write_strobe(index) <= '0';

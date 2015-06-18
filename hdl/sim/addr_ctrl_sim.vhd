@@ -233,9 +233,9 @@ begin
   begin
     aresetn <= '1' after 40 ns;
     aclk <= '1';
-    wait for 10 ns;
+    wait for 5 ns;
     aclk <= '0';
-    wait for 10 ns;
+    wait for 5 ns;
     if stop_sim = '1' then
       wait;
     end if;
@@ -261,12 +261,12 @@ begin
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
           s0_axi_awaddr     <= "000000000000"; -- height
-          s0_axi_wdata      <= std_logic_vector(to_unsigned(10, 32)); -- data height
+          s0_axi_wdata      <= std_logic_vector(to_unsigned(640, 32)); -- data height
         elsif cpt = 10 then
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
           s0_axi_awaddr     <= "000000000100"; -- width
-          s0_axi_wdata      <= std_logic_vector(to_unsigned(160, 32)); -- data height
+          s0_axi_wdata      <= std_logic_vector(to_unsigned(800, 32)); -- data height
         elsif cpt = 15 then
           s0_axi_awvalid    <= '1';
           s0_axi_wvalid     <= '1';
@@ -278,7 +278,7 @@ begin
           s0_axi_awaddr     <= "000000001000"; --start
           s0_axi_wdata      <= "00000000000000000000000000000001";
         end if;
-        if cpt = 100000 then
+        if cpt = 200000 then
           stop_sim <= '1';
         end if;
       end if;
