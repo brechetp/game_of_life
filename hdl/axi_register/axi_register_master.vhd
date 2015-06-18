@@ -120,7 +120,7 @@ begin
             if m_axi_s2m.rvalid = '1' then	--  Slave is sending us the data
               tmp := 0;
               for i in 0 to 7 loop
-                if ((r_strobe(i) = '1') or (read_word_cpt /= 0)) and ((r_offset + read_cell_number) < 80) then
+                if ((r_strobe(i) = '1') or (read_word_cpt /= 0)) and ((r_offset + read_cell_number + tmp) < 80) then
                   rc_vector(r_offset+read_cell_number+tmp) <= color2state(m_axi_s2m.rdata(8*i+7 downto 8*i));	--  Store the cell
                   tmp := tmp + 1;						                                    --  Assert that we've just loaded a new cell
                 end if;

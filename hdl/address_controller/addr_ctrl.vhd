@@ -350,15 +350,18 @@ begin
               right_torus       :=  '0'; -- test if we need to go to postload state or not
               if (j > 0) and (j + N_CELL-1 <= WORLD_WIDTH-1) then -- no torus effect
                 read_column	    := j-1; -- we need to fetch the (i, j-1) cell
-              else -- left torus, the leftmost cell has already been fetched
+                next_state      <= R_INLINE;
+                previous_state  <= read_state;
+                read_state      <= R_WAIT;
+              else -- torus effect 
                 rsize         <= 9;
-                if j=0 then
+                if j=0 then -- left torus, the leftmost cell has already been fetched
                   next_state	<= R_PRELOAD; -- mode right torus
                   previous_state<= read_state;
                   read_state	<= R_WAIT;
                   read_column	:= j;
                   read_offset	<= 1;
-                else
+                else -- right torus we have to fetch the rightmost cell after this line
                   right_torus   := '1';
                   next_state	<= R_POSTLOAD; -- mode right torus
                   previous_state<= read_state;
@@ -367,7 +370,7 @@ begin
                   read_offset   <= 0;
                 end if;
               end if;
-	      offset_first_to_load    :=	coordinates2offset(read_line, read_column, WORLD_WIDTH);
+	            offset_first_to_load    :=	coordinates2offset(read_line, read_column, WORLD_WIDTH);
               address_to_start_load   :=	r_base_address + (offset_first_to_load(31 downto 6) & b"000000");
               place_in_first_word	    :=	offset_first_to_load(5 downto 3);
               for k in 0 to 7 loop -- init of the read_strobe array
@@ -377,36 +380,29 @@ begin
                   read_strobe(k) <= '0';
                 end if;
               end loop; -- end of the read_strobe init
-              read_request <= '1'; -- request an address read
               raddress		    <= std_ulogic_vector(address_to_start_load); -- address to read
+              read_request <= '1'; -- request an address read
               if right_torus = '0' then
                 if i = 1 then -- possible end of column
                   if first_time = '1' then -- we need to start the writing of this new column
                     i <= i + 1;
                   else
-                    i               <= WORLD_HEIGHT - 1; -- reset the line index
-                    j               <= j + N_CELL - 2;
-                    next_state      <= R_INLINE;
-                    previous_state  <= read_state;
-                    read_state      <= R_WAIT;
+                    i               <=  WORLD_HEIGHT - 1; -- reset the line index
+                    j               <=  j + N_CELL - 2;
+                    next_state      <=  R_INLINE;
+                    previous_state  <=  read_state;
+                    read_state      <=  R_WAIT;
                   end if;
                   first_time <= not first_time; -- reset / unset of first_time check
                 else -- i/= 1, we stay in the current column
+                  i <= i +1; -- next line to be read
                   if i = WORLD_HEIGHT - 1 then -- need to roll up
                     i <= 0;
-                  else -- regular behavior
-                    i <= i +1; -- next line to be read
                   end if;
                 end if;
-              else -- rigth torus
-                next_state      <= R_POSTLOAD;
-                previous_state  <= read_state;
-                read_state      <= R_WAIT;
               end if;
             end if;
           when R_WAIT => -- we wait for the current query completion before moving on
-	    read_state	<= R_WAIT;
-	    raddress	<= raddress;
             if done_reading = '1' then
               read_state  <= next_state; -- we load the saved nex_state;
               if (previous_state = R_POSTLOAD) or (previous_state = R_INLINE and next_state /= R_POSTLOAD) then -- once the whole N_CELL have been fetched
@@ -452,7 +448,6 @@ begin
         write_line    := cpt;		            --  We write the "middle" line
         case write_state is
           when W_IDLE =>			    --  We wait for a new generation to be written
-	    write_state <= W_IDLE;
             done_writing_cell_ctrl <= '1';
             if ready_writing_cell_ctrl = '1' then   --  Driven by the cell ctrl. Indicate that a value to good to be written
               cpt := cpt+1;
@@ -462,11 +457,10 @@ begin
             end if;
 
           when W_START =>			    --  We are instructed to compute waddress and to ask for writing
-	    write_state <= W_START;
             offset_first_to_write := coordinates2offset(write_line, write_column, WORLD_WIDTH);
             address_to_write := w_base_address + (offset_first_to_write(31 downto 6) & b"000000"); -- we write at this address 
             place_in_first_word := offset_first_to_write(5 downto 3); -- 3 bits to map the exact begining of the write
-	    wsize <= 8;
+	          wsize <= 8;
             if write_column + (N_CELL - 2) - 1 > WORLD_WIDTH - 1 then  -- TODO See this condition again: DONE (?)
               wsize <= to_integer(to_unsigned(WORLD_WIDTH-1-j,16)(15 downto 3)); -- Wsize <= (WORLD_WIDTH -1 -j)/8 isn't it >> 10 ????
                 -- We don't want overflow on other addresses
@@ -475,7 +469,7 @@ begin
             elsif  place_in_first_word > "001" then
               wsize <= 9; -- we overflow on trailing 64-bit words, we need to write one more
             end if;
-	    for index in 0 to 7 loop
+	          for index in 0 to 7 loop
               if i >= to_integer(place_in_first_word) then
                 write_strobe(index) <= '1';
               else
@@ -502,14 +496,13 @@ begin
             end if;                     --  End of the if ready to write block
 
           when W_WAIT =>                --  We launched a request and are waiting for it to finish
-	    write_state <= W_WAIT;
             if done_writing = '1' then  --  The request is finished
               cpt := cpt + 1;            --  The next line to write will be cpt+1
               write_state <= W_START;
               -- Test finished column, go to W_IDLE and reset cpt
               if (write_line = WORLD_HEIGHT - 1) then
                 write_state <= W_IDLE;
-		cpt := -2;
+		            cpt := -2;
               end if;
               done_writing_cell_ctrl <= '1'; --  Notify that the cells have been written in memory
             end if;
