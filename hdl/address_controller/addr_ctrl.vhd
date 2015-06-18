@@ -155,8 +155,7 @@ architecture window of addr_ctrl is
   signal done_writing:		    std_ulogic;
   signal done_reading_cell_ctrl:    std_ulogic;
   signal done_writing_cell_ctrl:    std_ulogic;
-  signal ready_reading_cell_ctrl:   std_ulogic;
-  signal ready_writing_cell_ctrl:   std_ulogic;
+  signal ready_cell_ctrl:   std_ulogic;
   signal read_state:		    ADDR_CTRL_READ_STATE := R_IDLE;
   signal write_state:		    ADDR_CTRL_WRITE_STATE := W_IDLE;
   signal read_strobe:		    std_ulogic_vector(0 to 7); -- to remember where to read the first cell
@@ -221,8 +220,7 @@ begin
     done_reading    => done_reading_cell_ctrl,
     done_writing    => done_writing_cell_ctrl,
     write_cell_vector => write_cell_vector,
-    ready_writing   => ready_writing_cell_ctrl,
-    ready_reading   => ready_reading_cell_ctrl
+    ready_cell_ctrl => ready_cell_ctrl
   );
         
   WORLD_HEIGHT <= to_integer(unsigned(height)); -- convert the world dimensions
@@ -300,7 +298,7 @@ begin
             rsize                   <= 0; -- set the read size 
             read_strobe             <= (others => '0');
             read_strobe(to_integer(place_in_first_word)) <= '1'; -- we set the bit of the cell to be first read to 1, acts like a mask
-            if (ready_reading_cell_ctrl = '1') or (init = '1') then
+            if (ready_cell_ctrl = '1') or (init = '1') then
               init                  <=  '0';
               read_request          <= '1';
               next_state            <= R_INLINE;
@@ -343,7 +341,7 @@ begin
             end if;
 
           when R_INLINE => -- we are in the middle of the world
-            if ready_reading_cell_ctrl = '1' or (j = 0) then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
+            if ready_cell_ctrl = '1' or (j = 0) then -- the memory has been read and the cell controller is ready to accept more input (its output has been written)
               read_line		:=  i;
               right_torus       :=  '0'; -- test if we need to go to postload state or not
               if (j > 0) and (j + N_CELL-1 <= WORLD_WIDTH-1) then -- no torus effect
@@ -445,7 +443,7 @@ begin
         case write_state is
           when W_IDLE =>			    --  We wait for a new generation to be written
             done_writing_cell_ctrl <= '1';
-            if ready_writing_cell_ctrl = '1' then   --  Driven by the cell ctrl. Indicate that a value to good to be written
+            if ready_cell_ctrl = '1' then   --  Driven by the cell ctrl. Indicate that a value to good to be written
               cpt := cpt+1;
               if cpt =0 then
                 write_state <= W_START;		    --  Basically we will write at line cpt
@@ -488,7 +486,7 @@ begin
               end if;
             end loop;
             waddress <= std_ulogic_vector(address_to_write);
-            if ready_writing_cell_ctrl = '1' then   --  The new generation is ready
+            if ready_cell_ctrl = '1' then   --  The new generation is ready
               write_request <= '1';
               write_state <= W_WAIT;
             end if;                     --  End of the if ready to write block

@@ -89,11 +89,13 @@ package body cell_pkg is
 
   function three_count(s1, s2, s3, s4, s5, s6, s7, s8: cell_state) return BIT_COUNT is
     variable alpha_a, beta_b, gamma_c, res : BIT_COUNT; -- the first csa outputs
+    variable bit_four: std_ulogic;
   begin
     alpha_a := csa_adder(s1, s2, s3);
     beta_b := csa_adder(s4, s5, s6);
     gamma_c := csa_adder(s7, s8, DEAD);
-    res := ((((alpha_a(0) and beta_b(0)) or (alpha_a(0) and gamma_c(0)) or (beta_b(0) and gamma_c(0))) xor (alpha_a(1) xor beta_b(1) xor gamma_c(1))) & (alpha_a(0) xor beta_b(0) xor gamma_c(0))); -- te sum is a+b+c + 2*(alpha+beta+gamma) so we check if we have the 2 bit set
+    bit_four := (alpha_a(1) and beta_b(1)) or (alpha_a(1) and gamma_c(1)) or (beta_b(1) and gamma_c(1));
+    res := (((not bit_four) and (((alpha_a(0) and beta_b(0)) or (alpha_a(0) and gamma_c(0)) or (beta_b(0) and gamma_c(0))) xor (alpha_a(1) xor beta_b(1) xor gamma_c(1)))) & ((not bit_four) and (alpha_a(0) xor beta_b(0) xor gamma_c(0)))); -- the sum is a+b+c + 2*(alpha+beta+gamma) so we check if we have the 2 bit set
     return res;
   end three_count;
 
