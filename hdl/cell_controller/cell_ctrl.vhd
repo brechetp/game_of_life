@@ -38,7 +38,6 @@ end entity cell_ctrl;
 architecture arc of cell_ctrl is
 
   signal cells:           window := (others => (others => DEAD)); -- the cells translated from the colors, 3 x N_CELL
-  signal new_cells:       CELL_VECTOR(0 to N_CELL-3) := (others => DEAD); 
   signal state:           CELL_CTRL_STATE := FREEZE;
   signal enable:             std_ulogic := '0'; -- tells if the computation should start or freeze to cells
 
@@ -110,17 +109,9 @@ begin
           E => cells(1, i-1),
           NE => cells(0, i-1),
           self => cells(1, i),
-          state_out => new_cells(i-1),
-          mem_state => new_cells(i-1)
+          state_out => write_cell_vector(i-1)
         );
   end generate NET_GEN;
-
-  output: process(new_cells)
-  begin
-    for i in 0 to ( N_CELL-3 ) loop -- we slide the widow towards the south
-      write_cell_vector(i) <= new_cells(i);
-    end loop;
-  end process;
 
   with state select
     READY_CELL_CTRL <= '1' when NORMAL,
